@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Lodgist</string>
+    <string name="tagline">Find a place in Nigeria you can actually trust</string>
+    <string name="curated_by">Curated by ShadowSpark Technologies</string>
+    <string name="support_whatsapp">Chat with Lodgist Support</string>
+    <string name="verified_by_lodgist">Verified by Lodgist</string>
+    <string name="truthscore_label">TruthScore</string>
+    <string name="inspection_booking">Schedule Physical Inspection</string>
+    <string name="list_property">List Your Property</string>
+</resources>
