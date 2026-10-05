@@ -10,9 +10,27 @@
 /.idea/assetWizardSettings.xml
 .DS_Store
 /build
-/captures
+captures/
 .externalNativeBuild
 .cxx
 local.properties
 .env
 debug.keystore
+
+# Generated packages (Android.gitignore). Does not match metadata.json.
+*.apk
+*.aab
+output-metadata.json
+
+# Signing material. Release signing defaults to /my-upload-key.jks.
+*.jks
+*.keystore
+
+# Secrets plugin reads .env. Keep sanitized templates tracked.
+.env.*
+!.env.example
+!.env.sample
+!.env.template
+
+# Android Studio device-picker state (Android.gitignore)
+deploymentTargetDropDown.xml
