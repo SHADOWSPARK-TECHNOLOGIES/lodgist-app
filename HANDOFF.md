@@ -51,6 +51,7 @@ Live GET /api/listings returned 200, data [], total 0.
 adb devices listed nothing. ~/Android/Sdk has no emulator binary and no system-images directory. No AVD exists under ~/.android/avd.
 Free memory was about 4 GB, with 3.1 GB of swap already used. Disk free was 65 GB. A Play system image plus the emulator package is a large install, and 4 GB free is tight for running one. No image was installed.
 
+Rechecked after that note. adb still listed no devices. The emulator binary and system-images directory are still absent. Available memory was about 5.9 GB. That is still tight for an emulator on a machine already using 9.5 GB, so no image was installed.
 Runtime verification of the empty screen, the failed-load screen, the reload button, the local-save labels, and the disabled pay button remains blocked until a device is attached.
 
 ## Device test, when a phone is plugged in
