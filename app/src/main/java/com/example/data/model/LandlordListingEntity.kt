@@ -20,6 +20,6 @@ data class LandlordListingEntity(
     val hasNINVerified: Boolean,
     val hasBoreholeWater: Boolean,
     val hasPrepaidMeter: Boolean,
-    val status: String = "UNDER_VERIFICATION", // "UNDER_VERIFICATION", "PHYSICAL_VISIT_SCHEDULED", "APPROVED_LISTED"
+    val status: String = "SAVED_ON_PHONE",
     val submittedAt: Long = System.currentTimeMillis()
 )

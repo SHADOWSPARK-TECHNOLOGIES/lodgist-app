@@ -16,19 +16,23 @@ status VERIFIED on a listing does not mark it verified. Only verificationLabel "
 The live API currently returns success true, data [], total 0. Checked 7 October 2026 while writing this note.
 
 A failed load deletes seeded rows and says the list could not be loaded. It does not show sample homes as inventory.
+A failed load shows "Could not load homes." It is not labelled as an empty market.
 Reload calls the same read again.
+
+A landlord form save is labelled "Saved on this phone" and "Not submitted." It does not start an audit.
+The fake escrow checkout sheet is no longer opened.
 
 An inspection request is saved on the phone with status SAVED_ON_PHONE and no inspector name.
 The screen says it was not submitted. Cancel does not claim a refund.
 Pay and release do not write payment rows. The pay button is disabled. Old local payment rows, if any, are labelled "Not a payment."
 
-No payment route was added. Wait for a revised contract from the backend owner.
+No payment route was added. The backend rental-check contract exists on feat/rental-check-manual-payment and is not merged or deployed. It publishes no bank details and no pay destination. POST /api/rental-checks/:reference/pay returns 503 and must not be treated as checkout.
 
 ## Build identity
 
 Debug APK: app/build/outputs/apk/debug/app-debug.apk
 Built 7 October 2026 04:54 +0100. Size 26,610,567 bytes.
-sha256 653ab434344a52be5ddd2ddaa957bee535c66764e19ddf3fbc4fd7d6985f17d7
+sha256 db7e792747732aa2d6c6bdf61d00dbe887689a504d04f9786a5bea825ca752f4
 package: com.aistudio.lodgist.xrkwqv
 versionCode 1, versionName 1.0
 compileSdk 36, minSdk 24, targetSdk 36

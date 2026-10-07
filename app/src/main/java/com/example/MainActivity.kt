@@ -23,7 +23,6 @@ import com.example.data.model.PropertyEntity
 import com.example.ui.components.InspectionBookingSheet
 import com.example.ui.components.LodgistBottomBar
 import com.example.ui.components.LodgistTopBar
-import com.example.ui.components.PaymentCheckoutSheet
 import com.example.ui.screens.EscrowRevenueScreen
 import com.example.ui.screens.ExploreScreen
 import com.example.ui.screens.InspectionsScreen
@@ -64,10 +63,10 @@ fun LodgistApp(viewModel: LodgistViewModel) {
     val selectedProperty by viewModel.selectedProperty.collectAsStateWithLifecycle()
     val filterState by viewModel.filterState.collectAsStateWithLifecycle()
     val userMessage by viewModel.userMessage.collectAsStateWithLifecycle()
+    val inventoryLoad by viewModel.inventoryLoad.collectAsStateWithLifecycle()
 
     val snackbarHostState = remember { SnackbarHostState() }
     var propertyForBooking by remember { mutableStateOf<PropertyEntity?>(null) }
-    var propertyForEscrowPayment by remember { mutableStateOf<PropertyEntity?>(null) }
 
     LaunchedEffect(userMessage) {
         userMessage?.let { msg ->
@@ -133,6 +132,7 @@ fun LodgistApp(viewModel: LodgistViewModel) {
                     onToggleFavorite = { viewModel.toggleFavorite(it) },
                     onBookInspection = { propertyForBooking = it },
                     onReload = { viewModel.refreshPublishedHomes() },
+                    inventoryLoad = inventoryLoad,
                     modifier = Modifier.padding(innerPadding)
                 )
             }
@@ -228,30 +228,6 @@ fun LodgistApp(viewModel: LodgistViewModel) {
                         notes = notes
                     )
                     propertyForBooking = null
-                }
-            )
-        }
-
-        // Annual Rent Escrow Payment Bottom Sheet
-        propertyForEscrowPayment?.let { prop ->
-            PaymentCheckoutSheet(
-                title = "Annual Rent Escrow Protection",
-                subtitle = prop.title,
-                amountNaira = prop.totalMoveInCost,
-                purpose = "ANNUAL_RENT_ESCROW",
-                propertyId = prop.id,
-                payerName = "Verified Tenant",
-                payerPhone = "08012345678",
-                onDismiss = { propertyForEscrowPayment = null },
-                onPaymentSuccess = { method, ref ->
-                    viewModel.payRentIntoEscrow(
-                        property = prop,
-                        tenantName = "Verified Tenant",
-                        tenantPhone = "08012345678",
-                        method = method,
-                        ref = ref
-                    )
-                    propertyForEscrowPayment = null
                 }
             )
         }

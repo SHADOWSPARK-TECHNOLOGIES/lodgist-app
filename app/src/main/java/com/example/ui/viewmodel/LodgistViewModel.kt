@@ -20,6 +20,13 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+enum class InventoryLoad {
+    LOADING,
+    EMPTY,
+    FAILED,
+    READY
+}
+
 enum class ScreenDestination {
     EXPLORE,
     INSPECTIONS,
@@ -50,6 +57,9 @@ class LodgistViewModel(application: Application) : AndroidViewModel(application)
 
     private val _filterState = MutableStateFlow(FilterState())
     val filterState: StateFlow<FilterState> = _filterState.asStateFlow()
+
+    private val _inventoryLoad = MutableStateFlow(InventoryLoad.LOADING)
+    val inventoryLoad: StateFlow<InventoryLoad> = _inventoryLoad.asStateFlow()
 
     private val _userMessage = MutableStateFlow<String?>(null)
     val userMessage: StateFlow<String?> = _userMessage.asStateFlow()
@@ -124,16 +134,15 @@ class LodgistViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             when (val read = repository.refreshPublishedHomes()) {
                 is ListingsRead.Loaded -> {
-                    _userMessage.value = if (read.homes.isEmpty()) {
-                        "No published homes yet."
-                    } else {
-                        null
-                    }
+                    _inventoryLoad.value = if (read.homes.isEmpty()) InventoryLoad.EMPTY else InventoryLoad.READY
+                    _userMessage.value = if (read.homes.isEmpty()) "No published homes yet." else null
                 }
                 is ListingsRead.Unknown -> {
+                    _inventoryLoad.value = InventoryLoad.FAILED
                     _userMessage.value = "That home is not in the published list."
                 }
                 is ListingsRead.Failed -> {
+                    _inventoryLoad.value = InventoryLoad.FAILED
                     _userMessage.value = "Could not load homes. Nothing on screen is a live listing."
                 }
             }
@@ -251,7 +260,7 @@ class LodgistViewModel(application: Application) : AndroidViewModel(application)
                 hasNINVerified = hasNINVerified,
                 hasBoreholeWater = hasBoreholeWater,
                 hasPrepaidMeter = hasPrepaidMeter,
-                status = "UNDER_VERIFICATION"
+                status = "SAVED_ON_PHONE"
             )
             repository.submitLandlordProperty(submission)
             _userMessage.value = "Saved on this phone. It was not submitted, and no fee was collected."

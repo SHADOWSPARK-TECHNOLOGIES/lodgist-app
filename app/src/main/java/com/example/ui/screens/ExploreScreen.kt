@@ -73,6 +73,7 @@ import com.example.ui.components.formatNaira
 import com.example.ui.theme.LodgistOrange
 import com.example.ui.theme.LodgistTeal
 import com.example.ui.viewmodel.FilterState
+import com.example.ui.viewmodel.InventoryLoad
 
 @Composable
 fun ExploreScreen(
@@ -88,6 +89,7 @@ fun ExploreScreen(
     onToggleFavorite: (PropertyEntity) -> Unit,
     onBookInspection: (PropertyEntity) -> Unit,
     onReload: () -> Unit = {},
+    inventoryLoad: InventoryLoad = InventoryLoad.EMPTY,
     modifier: Modifier = Modifier
 ) {
     var showFilterPanel by remember { mutableStateOf(false) }
@@ -242,14 +244,18 @@ fun ExploreScreen(
                         .padding(horizontal = 16.dp, vertical = 24.dp)
                 ) {
                     Text(
-                        text = "No published homes yet.",
+                        text = if (inventoryLoad == InventoryLoad.FAILED) "Could not load homes." else "No published homes yet.",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "No published homes yet. Sample homes are not shown.",
+                        text = if (inventoryLoad == InventoryLoad.FAILED) {
+                            "This is not an empty market. Sample homes are not shown. Reload to try the list again."
+                        } else {
+                            "Sample homes are not shown."
+                        },
                         fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
