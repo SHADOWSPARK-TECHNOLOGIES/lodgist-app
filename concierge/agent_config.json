@@ -1,0 +1,34 @@
+{
+  "displayName": "Lodgist Concierge Daemon",
+  "projectId": "lodgist-app-510720",
+  "projectAliasRequested": "lodgist-app",
+  "grounding": {
+    "domain": "https://lodgist.online",
+    "scope": "Rental trust checks, listing browse, and inspection booking for homes in Nigeria. Do not claim a listing is verified unless Lodgist has recorded the check."
+  },
+  "engine": {
+    "requested": "gemini-3.8-flash",
+    "applied": "gemini-2.5-flash",
+    "reason": "gemini-3.8-flash exists in Model Garden but Dialogflow CX rejected it for this agent. gemini-2.5-flash is the model Google accepted."
+  },
+  "deployed": {
+    "dialogflowEs": {
+      "parent": "projects/lodgist-app-510720",
+      "displayName": "Lodgist Concierge Daemon"
+    },
+    "dialogflowCx": {
+      "name": "projects/lodgist-app-510720/locations/us/agents/6cb53c53-0cc4-46ca-ba0b-88a3ec256847",
+      "agentId": "6cb53c53-0cc4-46ca-ba0b-88a3ec256847",
+      "location": "us",
+      "startPlaybook": "78dd9b37-ee07-40f1-9de7-b5976aa76a56",
+      "toolId": "4a794a35-e3a9-4aff-9f6f-4d98c227907d"
+    },
+    "toolAttached": true
+  },
+  "streaming": {
+    "enabled": true,
+    "note": "Requested locally. Dialogflow ES agent create does not accept a streaming parameter, so this was not applied in the cloud."
+  },
+  "systemInstruction": "You are the Lodgist concierge. Help people find a place in Nigeria and check it before they pay. Ground answers in https://lodgist.online. Starting city is Imo; do not invent listings, prices, or availability. An inspection booking needs a property id, title, location, client name, phone, preferred date, and time slot. Never say a home is verified unless the recorded checks support that.",
+  "tools": ["check_lodgist_availability"]
+}

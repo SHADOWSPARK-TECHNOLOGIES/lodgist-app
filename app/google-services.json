@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "907178831870",
+    "project_id": "lodgist-app-510720",
+    "storage_bucket": "lodgist-app-510720.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:907178831870:android:4d3f9d98962dd0edebdaaf",
+        "android_client_info": {
+          "package_name": "com.aistudio.lodgist.xrkwqv"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAb-uB_RG7dOVSbmu5Lm_DF8Gc_g6VA4oE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,43 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Lodgist inspection availability",
+    "version": "0.1.0",
+    "description": "Tool schema only. lodgist.online has no public availability endpoint. The Android app stores inspection bookings locally. Do not call this as a live API."
+  },
+  "paths": {
+    "/check_lodgist_availability": {
+      "post": {
+        "operationId": "check_lodgist_availability",
+        "summary": "Check whether an inspection slot can be requested",
+        "description": "Matches InspectionBookingEntity fields in the Lodgist Android app. This does not query a live inventory.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["propertyId", "propertyTitle", "propertyLocation", "preferredDate", "preferredTimeSlot"],
+                "properties": {
+                  "propertyId": {"type": "string"},
+                  "propertyTitle": {"type": "string"},
+                  "propertyLocation": {"type": "string"},
+                  "clientName": {"type": "string"},
+                  "clientPhone": {"type": "string"},
+                  "preferredDate": {"type": "string", "description": "Example: Tomorrow, Oct 5"},
+                  "preferredTimeSlot": {"type": "string", "description": "Example: Morning (10:00 AM - 12:00 PM)"},
+                  "notes": {"type": "string"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "501": {
+            "description": "Not implemented. No cloud availability service is deployed."
+          }
+        }
+      }
+    }
+  }
+}
