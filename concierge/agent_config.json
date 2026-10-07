@@ -1,34 +1,74 @@
 {
   "displayName": "Lodgist Concierge Daemon",
   "projectId": "lodgist-app-510720",
-  "projectAliasRequested": "lodgist-app",
-  "grounding": {
-    "domain": "https://lodgist.online",
-    "scope": "Rental trust checks, listing browse, and inspection booking for homes in Nigeria. Do not claim a listing is verified unless Lodgist has recorded the check."
+  "agent": "projects/lodgist-app-510720/locations/us/agents/6cb53c53-0cc4-46ca-ba0b-88a3ec256847",
+  "requested": {
+    "model": "gemini-3.8-flash",
+    "streaming": true,
+    "projectAlias": "lodgist-app",
+    "serviceArea": "Starting city is Imo",
+    "bookingTool": "check_lodgist_availability as a live availability API"
   },
-  "engine": {
-    "requested": "gemini-3.8-flash",
-    "applied": "gemini-2.5-flash",
-    "reason": "gemini-3.8-flash exists in Model Garden but Dialogflow CX rejected it for this agent. gemini-2.5-flash is the model Google accepted."
+  "configured": {
+    "model": "gemini-2.5-flash",
+    "modelReason": "Dialogflow CX accepted gemini-2.5-flash on the playbook and generative settings. gemini-3.8-flash was not applied.",
+    "streaming": false,
+    "streamingReason": "The ES agent resource has no streaming field. ES create does not accept one.",
+    "serviceArea": "Starting in Imo. More cities after homes are reviewed.",
+    "serviceAreaSource": "frontend/src/lib/copy.ts home.badge. Imo is a state, not a city. Owerri campus pages are a labelled example, not inventory.",
+    "listingsRead": "GET https://lodgist-api-production.up.railway.app/api/listings",
+    "humanContact": "https://lodgist.online/listings",
+    "humanContactLimit": "The listings page offers WhatsApp only when NEXT_PUBLIC_SUPPORT_WHATSAPP is set. Do not invent a number or a wa.me link.",
+    "bookingTool": "Schema only. No servers URL. Must not be referenced by the playbook."
   },
   "deployed": {
-    "dialogflowEs": {
-      "parent": "projects/lodgist-app-510720",
-      "displayName": "Lodgist Concierge Daemon"
-    },
     "dialogflowCx": {
       "name": "projects/lodgist-app-510720/locations/us/agents/6cb53c53-0cc4-46ca-ba0b-88a3ec256847",
-      "agentId": "6cb53c53-0cc4-46ca-ba0b-88a3ec256847",
       "location": "us",
+      "displayName": "Lodgist Concierge Daemon",
       "startPlaybook": "78dd9b37-ee07-40f1-9de7-b5976aa76a56",
-      "toolId": "4a794a35-e3a9-4aff-9f6f-4d98c227907d"
+      "model": "gemini-2.5-flash",
+      "environments": [],
+      "webhooks": [],
+      "publicExposure": false
     },
-    "toolAttached": true
+    "dialogflowEs": {
+      "parent": "projects/lodgist-app-510720",
+      "displayName": "Lodgist Concierge Daemon",
+      "tier": "TIER_STANDARD",
+      "intents": ["Default Welcome Intent", "Default Fallback Intent"],
+      "entityTypes": 0,
+      "webhook": false,
+      "dependencyFound": false,
+      "kept": "Not deleted. No caller was found, which is not proof that none exists."
+    },
+    "bookingTool": {
+      "name": "projects/lodgist-app-510720/locations/us/agents/6cb53c53-0cc4-46ca-ba0b-88a3ec256847/tools/4a794a35-e3a9-4aff-9f6f-4d98c227907d",
+      "displayName": "check_lodgist_availability",
+      "servers": false,
+      "referencedByPlaybook": false
+    },
+    "listingsTool": {
+      "name": "projects/lodgist-app-510720/locations/us/agents/6cb53c53-0cc4-46ca-ba0b-88a3ec256847/tools/603bb3ce-d926-42b4-a000-9d5c120ac6ca",
+      "displayName": "list_public_listings",
+      "server": "https://lodgist-api-production.up.railway.app",
+      "operationId": "list_public_listings",
+      "limitMax": 12,
+      "referencedByPlaybook": true
+    }
   },
-  "streaming": {
-    "enabled": true,
-    "note": "Requested locally. Dialogflow ES agent create does not accept a streaming parameter, so this was not applied in the cloud."
+  "tested": {
+    "emptyInventory": "pass: GET /api/listings data=[] total=0",
+    "unknownProperty": "pass: GET /api/listings/999999999 404 Listing not found",
+    "unavailableBooking": "pass: booking tool has no server and is not referenced",
+    "unpaidRequest": "pass: POST /api/listings/1/viewing-requests 401",
+    "apiFailure": "pass: https://lodgist.online/api/listings is not the API and did not return 200",
+    "crossUserAccess": "pass: GET /api/listings/1/viewing-requests/mine 401",
+    "ruleOverride": "instruction text only; model compliance not called"
   },
-  "systemInstruction": "You are the Lodgist concierge. Help people find a place in Nigeria and check it before they pay. Ground answers in https://lodgist.online. Starting city is Imo; do not invent listings, prices, or availability. An inspection booking needs a property id, title, location, client name, phone, preferred date, and time slot. Never say a home is verified unless the recorded checks support that.",
-  "tools": ["check_lodgist_availability"]
+  "notDone": [
+    "No usage alert. Do not expose this agent until one exists. A budget alert is not a spending cap.",
+    "No new Firebase capability. The Android package is already registered; this slice does not need another.",
+    "No authenticated concierge route. Public browse is already unauthenticated. Viewing and booking writes already return 401 without a token."
+  ]
 }
