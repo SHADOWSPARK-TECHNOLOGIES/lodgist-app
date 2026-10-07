@@ -226,7 +226,7 @@ private fun InspectionCard(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = booking.status,
+                        text = if (booking.status == "CANCELLED") "Removed on this phone" else "Saved on this phone",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = LodgistTeal
@@ -311,7 +311,7 @@ private fun InspectionCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "Escort Officer: ${booking.assignedAgent}",
+                    text = if (booking.assignedAgent.isBlank()) "No inspector assigned. This request was not submitted." else "Escort Officer: ${booking.assignedAgent}",
                     fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

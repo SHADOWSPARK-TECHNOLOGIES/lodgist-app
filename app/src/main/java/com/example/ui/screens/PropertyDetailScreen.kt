@@ -143,6 +143,7 @@ fun PropertyDetailScreen(
 
                         Button(
                             onClick = { onPayEscrow(property) },
+                            enabled = false,
                             modifier = Modifier
                                 .height(46.dp)
                                 .testTag("detail_pay_escrow_btn"),
@@ -155,7 +156,7 @@ fun PropertyDetailScreen(
                                 modifier = Modifier.size(16.dp)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Escrow Rent", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            Text("Payments unavailable", fontSize = 13.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }

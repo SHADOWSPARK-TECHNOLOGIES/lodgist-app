@@ -347,6 +347,14 @@ class ExampleRobolectricTest {
 
     // 2. Mock LodgistApiService
     val mockApiService = object : com.example.data.remote.api.LodgistApiService {
+      override suspend fun getPublicListings(
+        limit: Int
+      ): retrofit2.Response<com.example.data.remote.PublicListingsResponse> {
+        return retrofit2.Response.success(
+          com.example.data.remote.PublicListingsResponse(success = true, data = emptyList())
+        )
+      }
+
       override suspend fun getProperties(
         city: String?,
         verified: Boolean?,

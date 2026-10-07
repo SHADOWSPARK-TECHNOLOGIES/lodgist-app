@@ -100,7 +100,8 @@ object DatabaseModule {
             propertyDao = providePropertyDao(database),
             inspectionDao = provideInspectionDao(database),
             landlordListingDao = provideLandlordListingDao(database),
-            escrowDao = provideEscrowDao(database)
+            escrowDao = provideEscrowDao(database),
+            apiService = NetworkModule.provideLodgistApiService()
         )
     }
 

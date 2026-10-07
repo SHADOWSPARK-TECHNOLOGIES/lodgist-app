@@ -9,6 +9,9 @@ import com.example.data.model.EscrowPaymentEntity
 import com.example.data.model.InspectionBookingEntity
 import com.example.data.model.LandlordListingEntity
 import com.example.data.model.PropertyEntity
+import com.example.data.remote.ListingsRead
+import com.example.data.remote.PublicListings
+import com.example.data.remote.api.LodgistApiService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
@@ -17,7 +20,8 @@ class LodgistRepository(
     private val propertyDao: PropertyDao,
     private val inspectionDao: InspectionDao,
     private val landlordListingDao: LandlordListingDao,
-    private val escrowDao: EscrowDao
+    private val escrowDao: EscrowDao,
+    private val apiService: LodgistApiService? = null
 ) {
     val allProperties: Flow<List<PropertyEntity>> = propertyDao.getAllProperties()
     val favoriteProperties: Flow<List<PropertyEntity>> = propertyDao.getFavoriteProperties()
@@ -78,10 +82,31 @@ class LodgistRepository(
 
     suspend fun checkAndSeedInitialData() {
         withContext(Dispatchers.IO) {
-            val count = propertyDao.getPropertyCount()
-            if (count == 0) {
-                LodgistDatabase.populateInitialData(propertyDao)
-            }
+            // Kept so older callers compile. Demo rows are not inventory.
         }
+    }
+
+    suspend fun refreshPublishedHomes(): ListingsRead = withContext(Dispatchers.IO) {
+        val service = apiService ?: return@withContext ListingsRead.Failed(0)
+        val read = try {
+            val response = service.getPublicListings(limit = 12)
+            val body = response.body()
+            if (response.isSuccessful && body != null) {
+                if (!body.success) ListingsRead.Failed(response.code())
+                else ListingsRead.Loaded(body.data.mapNotNull { it.toEntity() })
+            } else {
+                PublicListings.read(response.code(), response.errorBody()?.string())
+            }
+        } catch (_: Exception) {
+            ListingsRead.Failed(0)
+        }
+        when (read) {
+            is ListingsRead.Loaded -> {
+                propertyDao.deleteAll()
+                if (read.homes.isNotEmpty()) propertyDao.insertProperties(read.homes)
+            }
+            else -> propertyDao.deleteDemonstrationRows()
+        }
+        read
     }
 }

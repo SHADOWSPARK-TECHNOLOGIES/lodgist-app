@@ -87,7 +87,7 @@ fun ExploreScreen(
     onPropertyClick: (PropertyEntity) -> Unit,
     onToggleFavorite: (PropertyEntity) -> Unit,
     onBookInspection: (PropertyEntity) -> Unit,
-    onNavigateToSearch: () -> Unit = {},
+    onReload: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var showFilterPanel by remember { mutableStateOf(false) }
@@ -188,7 +188,7 @@ fun ExploreScreen(
                     Spacer(modifier = Modifier.height(4.dp))
 
                     Text(
-                        text = "See what Lodgist checked before you pay. Verified landlords & zero fake agent fees.",
+                        text = "Homes appear here after Lodgist publishes them. An empty list means there are none yet.",
                         fontSize = 12.sp,
                         color = Color.White.copy(alpha = 0.85f),
                         lineHeight = 16.sp
@@ -207,49 +207,55 @@ fun ExploreScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "${properties.size} Properties Available",
+                    text = if (properties.isEmpty()) "No published homes" else "${properties.size} published homes",
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(
-                        onClick = { showFilterPanel = !showFilterPanel },
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.testTag("toggle_filters_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Tune,
-                            contentDescription = "Filters",
-                            modifier = Modifier.size(16.dp),
-                            tint = if (showFilterPanel) LodgistOrange else MaterialTheme.colorScheme.onSurface
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = if (showFilterPanel) "Hide" else "Filters",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
+                OutlinedButton(
+                    onClick = { showFilterPanel = !showFilterPanel },
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.testTag("toggle_filters_button")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Tune,
+                        contentDescription = "Filters",
+                        modifier = Modifier.size(16.dp),
+                        tint = if (showFilterPanel) LodgistOrange else MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = if (showFilterPanel) "Hide Filters" else "More Filters",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+        }
 
-                    androidx.compose.material3.FilledTonalButton(
-                        onClick = onNavigateToSearch,
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.testTag("open_search_screen_button")
-                    ) {
-                        Icon(
-                            imageVector = androidx.compose.material.icons.Icons.Default.Search,
-                            contentDescription = "Filter Houses & Flats",
-                            modifier = Modifier.size(16.dp),
-                            tint = LodgistOrange
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = "Search Screen",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
+        if (properties.isEmpty()) {
+            item {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 24.dp)
+                ) {
+                    Text(
+                        text = "No published homes yet.",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "No published homes yet. Sample homes are not shown.",
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Button(onClick = onReload) {
+                        Text("Reload")
                     }
                 }
             }
@@ -468,35 +474,25 @@ fun ExploreScreen(
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(
-                            text = "No Public Listings Found",
-                            fontSize = 17.sp,
+                            text = "No homes match your search",
+                            fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
-                            text = "Only Lodgist-reviewed, non-sample homes appear in public inventory. Unreviewed submissions or sample fixtures are excluded from public search.",
+                            text = "Try broadening your budget or changing the city filter to see all verified Lodgist properties.",
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             lineHeight = 16.sp
                         )
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Text(
-                            text = "Owerri Campus Pilot (FUTO, IMSU, Nekede): If you have a verified rental to list or need enquiry assistance, reach our official field team.",
-                            fontSize = 11.sp,
-                            color = LodgistTeal,
-                            fontWeight = FontWeight.SemiBold,
-                            lineHeight = 15.sp
-                        )
                         Spacer(modifier = Modifier.height(16.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Button(
-                                onClick = onResetFilters,
-                                shape = RoundedCornerShape(8.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = LodgistOrange)
-                            ) {
-                                Text("Reset Filters", fontSize = 12.sp)
-                            }
+                        Button(
+                            onClick = onResetFilters,
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = LodgistOrange)
+                        ) {
+                            Text("Reset All Filters")
                         }
                     }
                 }

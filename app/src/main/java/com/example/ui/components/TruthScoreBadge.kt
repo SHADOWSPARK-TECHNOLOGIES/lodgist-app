@@ -111,7 +111,7 @@ fun VerifiedBadge(
         )
         Spacer(modifier = Modifier.width(4.dp))
         Text(
-            text = if (isVerified) "Verified by Lodgist" else "Review Pending",
+            text = if (isVerified) "Verified by Lodgist" else "Not verified by Lodgist",
             color = Color(0xFF1ABC9C),
             fontSize = 11.sp,
             fontWeight = FontWeight.SemiBold

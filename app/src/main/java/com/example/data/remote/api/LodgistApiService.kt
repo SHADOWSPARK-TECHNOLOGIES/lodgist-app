@@ -8,6 +8,7 @@ import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
+import com.example.data.remote.PublicListingsResponse
 
 /**
  * Retrofit API service interface for communicating with the Lodgist website backend API.
@@ -15,19 +16,12 @@ import retrofit2.http.Query
 interface LodgistApiService {
 
     /**
-     * Live production public listings endpoint on Railway backend.
-     * Returns 200 with non-sample, Lodgist-reviewed public homes (or empty list).
+     * Public browse. Owned by the Lodgist API. Empty data means no published homes.
      */
     @GET("api/listings")
-    suspend fun getListings(): Response<PropertyListResponseDto>
-
-    /**
-     * Submits an advertiser lead (e.g. for landlords/advertisers on Owerri campus pilot).
-     */
-    @POST("api/advertise")
-    suspend fun submitAdvertiseLead(
-        @Body lead: Map<String, String>
-    ): Response<Map<String, Any>>
+    suspend fun getPublicListings(
+        @Query("limit") limit: Int = 12
+    ): Response<PublicListingsResponse>
 
     /**
      * Fetches property listings from Lodgist with optional city and verification filters.
