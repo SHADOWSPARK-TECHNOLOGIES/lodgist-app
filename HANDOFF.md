@@ -46,8 +46,39 @@ Passed: ./gradlew :app:testDebugUnitTest
 Passed: ./gradlew :app:assembleDebug
 Live GET /api/listings returned 200, data [], total 0.
 
-Unrun: emulator and device. adb reported no devices. No emulator binary under ~/Android/Sdk/emulator. The empty screen, reload button, and disabled pay button were not watched on a phone.
-Unrun: release build, Play upload, signed AAB.
+## Runtime verification, 7 October 2026
+
+adb devices listed nothing. ~/Android/Sdk has no emulator binary and no system-images directory. No AVD exists under ~/.android/avd.
+Free memory was about 4 GB, with 3.1 GB of swap already used. Disk free was 65 GB. A Play system image plus the emulator package is a large install, and 4 GB free is tight for running one. No image was installed.
+
+Runtime verification of the empty screen, the failed-load screen, the reload button, the local-save labels, and the disabled pay button remains blocked until a device is attached.
+
+## Device test, when a phone is plugged in
+
+Use the existing debug APK. Do not install a new signing key.
+
+1. Enable USB debugging. Then run:
+   /home/moronto/Android/Sdk/platform-tools/adb devices -l
+   /home/moronto/Android/Sdk/platform-tools/adb install -r /home/moronto/lodgist-app/app/build/outputs/apk/debug/app-debug.apk
+2. Open Lodgist on Wi-Fi. Explore should say "No published homes yet." It should not show the seeded Owerri, Lagos, Port Harcourt, or Abuja sample homes.
+3. Turn on airplane mode. Tap Reload. The screen should say "Could not load homes." It should not say the market is empty, and it should not show sample homes.
+4. Turn Wi-Fi back on. Tap Reload. It should return to "No published homes yet."
+5. Open List a property, save a form, and confirm the label is "Saved on this phone" / "Not submitted." It must not say an audit started.
+6. Save an inspection. The inspections screen must say saved on this phone, with no inspector name. Cancel must not say refunded.
+7. Open a home detail if any exist. The pay control must stay disabled. The escrow screen must not offer a working release, and any old row must read "Not a payment."
+8. Do not enter a card number. Do not call POST /api/rental-checks/:reference/pay. A 503 from that route is not checkout.
+
+## Release prerequisites, inspected, not changed
+
+Release signing looks for KEYSTORE_PATH, or my-upload-key.jks in the repo root, plus STORE_PASSWORD and KEY_PASSWORD, alias upload.
+KEYSTORE_PATH, STORE_PASSWORD, and KEY_PASSWORD are unset. my-upload-key.jks is absent. debug.keystore is present and is only for the debug APK.
+assembleRelease was started and did not produce app/build/outputs/apk/release. No upload key was created. Nothing was published.
+
+A store candidate still needs: a release AAB, the final applicationId decision (it is still com.aistudio.lodgist.xrkwqv), an upload key that is not the debug keystore, and the account owner clearing Play Console address verification.
+
+## Next action
+
+Attach a phone and run the eight steps above. Do not wire rental-check payment until that API is deployed and a real payment destination is published.
 
 ## Play, still open
 
