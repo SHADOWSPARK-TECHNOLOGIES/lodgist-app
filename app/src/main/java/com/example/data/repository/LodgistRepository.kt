@@ -39,9 +39,16 @@ class LodgistRepository(
         }
     }
 
-    suspend fun bookInspection(booking: InspectionBookingEntity): Long {
+    suspend fun bookInspection(booking: InspectionBookingEntity): Result<Long> {
         return withContext(Dispatchers.IO) {
-            inspectionDao.insertBooking(booking)
+            val property = propertyDao.getPropertyByIdDirect(booking.propertyId)
+            if (property != null && property.verificationStatus != "VERIFIED") {
+                return@withContext Result.failure(
+                    IllegalStateException("Inspection request rejected: Property ${booking.propertyId} is not verified. Viewing requests stay verified-only.")
+                )
+            }
+            val id = inspectionDao.insertBooking(booking)
+            Result.success(id)
         }
     }
 

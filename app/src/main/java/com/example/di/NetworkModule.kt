@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit
  */
 object NetworkModule {
 
-    const val DEFAULT_BASE_URL = "https://api.lodgist.ng/"
+    const val DEFAULT_BASE_URL = "https://lodgist-api-production.up.railway.app/"
 
     @Volatile
     private var apiServiceInstance: LodgistApiService? = null

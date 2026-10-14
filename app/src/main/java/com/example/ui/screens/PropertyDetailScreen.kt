@@ -66,6 +66,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.data.model.PropertyEntity
+import com.example.ui.components.SpatialLabNeighborhoodCard
 import com.example.ui.components.TruthScoreAuditCard
 import com.example.ui.components.TruthScoreCircle
 import com.example.ui.components.VerifiedBadge
@@ -122,15 +123,22 @@ fun PropertyDetailScreen(
                         )
                     }
 
+                    val isVerifiedForViewing = (property.verificationStatus == "VERIFIED")
+
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedButton(
-                            onClick = { onBookInspection(property) },
+                            onClick = { if (isVerifiedForViewing) onBookInspection(property) },
+                            enabled = isVerifiedForViewing,
                             modifier = Modifier
                                 .height(46.dp)
                                 .testTag("detail_schedule_inspection_btn"),
                             shape = RoundedCornerShape(10.dp)
                         ) {
-                            Text("Inspect", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            Text(
+                                text = if (isVerifiedForViewing) "Inspect" else "Viewing Restricted",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
 
                         Button(
@@ -386,6 +394,11 @@ fun PropertyDetailScreen(
 
                 // TruthScore 5-Pillar Audit Card
                 TruthScoreAuditCard(property = property)
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Spatial Lab: Published Neighborhood & Campus Straight-line Distance
+                SpatialLabNeighborhoodCard(property = property)
 
                 Spacer(modifier = Modifier.height(16.dp))
 

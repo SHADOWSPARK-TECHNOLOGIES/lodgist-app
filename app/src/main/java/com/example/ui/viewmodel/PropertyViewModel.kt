@@ -42,6 +42,18 @@ class PropertyViewModel(
     private val _locationFilter = MutableStateFlow("")
     val locationFilter: StateFlow<String> = _locationFilter.asStateFlow()
 
+    private val _minPriceFilter = MutableStateFlow(0.0)
+    val minPriceFilter: StateFlow<Double> = _minPriceFilter.asStateFlow()
+
+    private val _maxPriceFilter = MutableStateFlow(Double.MAX_VALUE)
+    val maxPriceFilter: StateFlow<Double> = _maxPriceFilter.asStateFlow()
+
+    private val _roomsFilter = MutableStateFlow(0) // 0 = Any, 1, 2, 3, 4+
+    val roomsFilter: StateFlow<Int> = _roomsFilter.asStateFlow()
+
+    private val _propertyCategoryFilter = MutableStateFlow("All") // "All", "Flats", "Houses", "Self-Contain"
+    val propertyCategoryFilter: StateFlow<String> = _propertyCategoryFilter.asStateFlow()
+
     private val _verifiedOnlyFilter = MutableStateFlow(false)
     val verifiedOnlyFilter: StateFlow<Boolean> = _verifiedOnlyFilter.asStateFlow()
 
@@ -74,28 +86,62 @@ class PropertyViewModel(
             initialValue = emptyList()
         )
 
+    private data class QuadFilter(
+        val minPrice: Double,
+        val maxPrice: Double,
+        val rooms: Int,
+        val category: String
+    )
+
+    private data class FilterCriteria(
+        val query: String,
+        val location: String,
+        val verifiedOnly: Boolean,
+        val minPrice: Double,
+        val maxPrice: Double,
+        val rooms: Int,
+        val category: String
+    )
+
+    private val _filterCriteria = combine(
+        combine(_searchQuery, _locationFilter, _verifiedOnlyFilter) { q, loc, ver ->
+            Triple(q, loc, ver)
+        },
+        combine(_minPriceFilter, _maxPriceFilter, _roomsFilter, _propertyCategoryFilter) { minP, maxP, r, cat ->
+            QuadFilter(minP, maxP, r, cat)
+        }
+    ) { textFilters, priceAndRooms ->
+        FilterCriteria(
+            query = textFilters.first,
+            location = textFilters.second,
+            verifiedOnly = textFilters.third,
+            minPrice = priceAndRooms.minPrice,
+            maxPrice = priceAndRooms.maxPrice,
+            rooms = priceAndRooms.rooms,
+            category = priceAndRooms.category
+        )
+    }
+
     /**
      * Comprehensive UI state that dynamically combines cached listings with active
-     * search queries (location or keywords) and verification filters.
+     * search queries (location or keywords), price range, rooms, category, and verification filters.
      */
     val uiState: StateFlow<PropertyUiState> = combine(
         propertyRepository.allCachedProperties,
-        _searchQuery,
-        _locationFilter,
-        _verifiedOnlyFilter,
+        _filterCriteria,
         _selectedProperty
-    ) { properties, query, location, verifiedOnly, selected ->
-        val queryKeywords = query.trim().lowercase().split("\\s+".toRegex()).filter { it.isNotBlank() }
+    ) { properties, filters, selected ->
+        val queryKeywords = filters.query.trim().lowercase().split("\\s+".toRegex()).filter { it.isNotBlank() }
 
         val filtered = properties.filter { property ->
             // Verification check
-            val matchesVerification = if (verifiedOnly) property.verified else true
+            val matchesVerification = if (filters.verifiedOnly) property.verified else true
 
             // Location filter check
-            val matchesLocation = if (location.isBlank() || location.equals("All", ignoreCase = true)) {
+            val matchesLocation = if (filters.location.isBlank() || filters.location.equals("All", ignoreCase = true)) {
                 true
             } else {
-                property.location.contains(location, ignoreCase = true)
+                property.location.contains(filters.location, ignoreCase = true)
             }
 
             // Keyword filter check (matches across title, location, description, or propertyType)
@@ -112,14 +158,41 @@ class PropertyViewModel(
                 queryKeywords.all { keyword -> searchableText.contains(keyword) }
             }
 
-            matchesVerification && matchesLocation && matchesKeywords
+            // Price range check
+            val matchesPrice = property.price in filters.minPrice..filters.maxPrice
+
+            // Rooms / bedrooms check
+            val matchesRooms = when (filters.rooms) {
+                0 -> true
+                4 -> property.bedrooms >= 4
+                else -> property.bedrooms == filters.rooms
+            }
+
+            // Category check (houses vs flats)
+            val matchesCategory = when (filters.category) {
+                "All" -> true
+                "Flats" -> property.propertyType.contains("Flat", ignoreCase = true) ||
+                           property.propertyType.contains("Apartment", ignoreCase = true)
+                "Houses" -> property.propertyType.contains("House", ignoreCase = true) ||
+                            property.propertyType.contains("Duplex", ignoreCase = true) ||
+                            property.propertyType.contains("Bungalow", ignoreCase = true)
+                "Self-Contain" -> property.propertyType.contains("Self-Contain", ignoreCase = true) ||
+                                  property.propertyType.contains("Studio", ignoreCase = true)
+                else -> true
+            }
+
+            matchesVerification && matchesLocation && matchesKeywords && matchesPrice && matchesRooms && matchesCategory
         }
 
         PropertyUiState.Success(
             properties = filtered,
-            verifiedOnly = verifiedOnly,
-            searchQuery = query,
-            locationFilter = location,
+            verifiedOnly = filters.verifiedOnly,
+            searchQuery = filters.query,
+            locationFilter = filters.location,
+            minPrice = filters.minPrice,
+            maxPrice = filters.maxPrice,
+            rooms = filters.rooms,
+            propertyCategory = filters.category,
             selectedProperty = selected,
             totalCount = filtered.size
         )
@@ -144,6 +217,28 @@ class PropertyViewModel(
     }
 
     /**
+     * Updates the price range filter.
+     */
+    fun onPriceRangeChanged(minPrice: Double, maxPrice: Double) {
+        _minPriceFilter.value = minPrice
+        _maxPriceFilter.value = maxPrice
+    }
+
+    /**
+     * Updates the number of rooms / bedrooms filter (0 = Any, 1..4+).
+     */
+    fun onRoomsFilterChanged(rooms: Int) {
+        _roomsFilter.value = rooms
+    }
+
+    /**
+     * Updates the property category filter ("All", "Flats", "Houses", "Self-Contain").
+     */
+    fun onPropertyCategoryChanged(category: String) {
+        _propertyCategoryFilter.value = category
+    }
+
+    /**
      * Convenience method to filter listings by keywords.
      */
     fun filterByKeywords(keywords: String) {
@@ -158,11 +253,15 @@ class PropertyViewModel(
     }
 
     /**
-     * Clears both the search query and location filter.
+     * Clears all search criteria and filter states.
      */
     fun clearSearch() {
         _searchQuery.value = ""
         _locationFilter.value = ""
+        _minPriceFilter.value = 0.0
+        _maxPriceFilter.value = Double.MAX_VALUE
+        _roomsFilter.value = 0
+        _propertyCategoryFilter.value = "All"
     }
 
     /**

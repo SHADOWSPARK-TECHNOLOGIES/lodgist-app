@@ -83,7 +83,8 @@ data class PropertyDto(
  */
 @JsonClass(generateAdapter = true)
 data class PropertyListResponseDto(
-    @Json(name = "status") val status: String? = "success",
+    @Json(name = "success") val success: Boolean = true,
+    @Json(name = "status") val status: String? = null,
     @Json(name = "total") val total: Int? = 0,
     @Json(name = "data") val data: List<PropertyDto> = emptyList()
 )

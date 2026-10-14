@@ -30,6 +30,7 @@ import com.example.ui.screens.InspectionsScreen
 import com.example.ui.screens.ListPropertyScreen
 import com.example.ui.screens.PropertyDetailScreen
 import com.example.ui.screens.SavedScreen
+import com.example.ui.screens.SearchPropertyContent
 import com.example.ui.screens.TrustSafetyScreen
 import com.example.ui.theme.LodgistTheme
 import com.example.ui.viewmodel.LodgistViewModel
@@ -83,6 +84,7 @@ fun LodgistApp(viewModel: LodgistViewModel) {
                 LodgistTopBar(
                     title = when (currentScreen) {
                         ScreenDestination.EXPLORE -> "Lodgist"
+                        ScreenDestination.SEARCH_PROPERTIES -> "Search Properties"
                         ScreenDestination.INSPECTIONS -> "My Inspections"
                         ScreenDestination.SAVED -> "Saved Properties"
                         ScreenDestination.ESCROW_VAULT -> "Escrow Vault"
@@ -92,6 +94,7 @@ fun LodgistApp(viewModel: LodgistViewModel) {
                     },
                     subtitle = when (currentScreen) {
                         ScreenDestination.EXPLORE -> "Verified Nigeria Rentals"
+                        ScreenDestination.SEARCH_PROPERTIES -> "Filter Houses & Flats"
                         ScreenDestination.INSPECTIONS -> "Field Walkthroughs"
                         ScreenDestination.SAVED -> "Bookmarked Homes"
                         ScreenDestination.ESCROW_VAULT -> "Insured Rent Protection"
@@ -99,9 +102,11 @@ fun LodgistApp(viewModel: LodgistViewModel) {
                         ScreenDestination.LIST_PROPERTY -> "Landlord & Owner Portal"
                         ScreenDestination.PROPERTY_DETAIL -> ""
                     },
-                    canNavigateBack = false,
+                    canNavigateBack = currentScreen != ScreenDestination.EXPLORE,
+                    onNavigateBack = { viewModel.popBack() },
                     savedCount = savedProperties.size,
-                    onSavedClick = { viewModel.navigateTo(ScreenDestination.SAVED) }
+                    onSavedClick = { viewModel.navigateTo(ScreenDestination.SAVED) },
+                    onSearchClick = { viewModel.navigateTo(ScreenDestination.SEARCH_PROPERTIES) }
                 )
             }
         },
@@ -118,6 +123,10 @@ fun LodgistApp(viewModel: LodgistViewModel) {
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
+        androidx.activity.compose.BackHandler(enabled = currentScreen != ScreenDestination.EXPLORE) {
+            viewModel.popBack()
+        }
+
         when (currentScreen) {
             ScreenDestination.EXPLORE -> {
                 ExploreScreen(
@@ -131,6 +140,30 @@ fun LodgistApp(viewModel: LodgistViewModel) {
                     onResetFilters = { viewModel.resetFilters() },
                     onPropertyClick = { viewModel.selectProperty(it.id) },
                     onToggleFavorite = { viewModel.toggleFavorite(it) },
+                    onBookInspection = { propertyForBooking = it },
+                    onNavigateToSearch = { viewModel.navigateTo(ScreenDestination.SEARCH_PROPERTIES) },
+                    modifier = Modifier.padding(innerPadding)
+                )
+            }
+
+            ScreenDestination.SEARCH_PROPERTIES -> {
+                SearchPropertyContent(
+                    properties = properties,
+                    searchQuery = filterState.searchQuery,
+                    onSearchQueryChange = { viewModel.updateSearchQuery(it) },
+                    locationFilter = filterState.selectedCity,
+                    onLocationFilterChange = { viewModel.updateCityFilter(it) },
+                    categoryFilter = filterState.selectedCategory,
+                    onCategoryFilterChange = { viewModel.updateCategoryFilter(it) },
+                    minPrice = filterState.minRentNaira,
+                    maxPrice = filterState.maxRentNaira,
+                    onPriceRangeChange = { min, max -> viewModel.updatePriceRange(min, max) },
+                    roomsFilter = filterState.selectedRooms,
+                    onRoomsFilterChange = { viewModel.updateRoomsFilter(it) },
+                    verifiedOnly = filterState.onlyHighTruthScore,
+                    onToggleVerifiedOnly = { viewModel.toggleHighTruthScoreFilter() },
+                    onResetFilters = { viewModel.resetFilters() },
+                    onPropertyClick = { viewModel.selectProperty(it.id) },
                     onBookInspection = { propertyForBooking = it },
                     modifier = Modifier.padding(innerPadding)
                 )

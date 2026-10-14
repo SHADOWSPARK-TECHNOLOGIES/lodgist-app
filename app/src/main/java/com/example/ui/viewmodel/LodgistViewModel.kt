@@ -21,6 +21,7 @@ import kotlinx.coroutines.launch
 
 enum class ScreenDestination {
     EXPLORE,
+    SEARCH_PROPERTIES,
     INSPECTIONS,
     SAVED,
     ESCROW_VAULT,
@@ -33,13 +34,22 @@ data class FilterState(
     val searchQuery: String = "",
     val selectedCity: String = "All", // "All", "Owerri", "Nekede", "Lagos", "Port Harcourt", "Abuja"
     val selectedType: String = "All", // "All", "Self-Contain", "1 Bedroom Flat", "2 Bedroom Flat", "3 Bedroom Duplex", "Studio Apartment"
+    val minRentNaira: Long = 0L,
     val maxRentNaira: Long = 10000000L,
+    val selectedRooms: Int = 0, // 0 = Any, 1, 2, 3, 4+
+    val selectedCategory: String = "All", // "All", "Houses", "Flats", "Self-Contain"
     val onlyHighTruthScore: Boolean = false // TruthScore >= 90
 )
 
-class LodgistViewModel(application: Application) : AndroidViewModel(application) {
-    private val database = DatabaseModule.provideAppDatabase(application)
-    private val repository = DatabaseModule.provideLodgistRepository(database)
+class LodgistViewModel(
+    application: android.app.Application,
+    customRepository: com.example.data.repository.LodgistRepository?
+) : androidx.lifecycle.AndroidViewModel(application) {
+
+    constructor(application: android.app.Application) : this(application, null)
+
+    private val database = com.example.di.DatabaseModule.provideAppDatabase(application)
+    private val repository = customRepository ?: com.example.di.DatabaseModule.provideLodgistRepository(database)
 
     private val _currentScreen = MutableStateFlow(ScreenDestination.EXPLORE)
     val currentScreen: StateFlow<ScreenDestination> = _currentScreen.asStateFlow()
@@ -99,10 +109,28 @@ class LodgistViewModel(application: Application) : AndroidViewModel(application)
                 else -> prop.propertyType.equals(filter.selectedType, ignoreCase = true)
             }
 
-            val matchesRent = prop.annualRent <= filter.maxRentNaira
+            val matchesRooms = when (filter.selectedRooms) {
+                0 -> true
+                4 -> prop.bedrooms >= 4
+                else -> prop.bedrooms == filter.selectedRooms
+            }
+
+            val matchesCategory = when (filter.selectedCategory) {
+                "All" -> true
+                "Flats" -> prop.propertyType.contains("Flat", ignoreCase = true) ||
+                           prop.propertyType.contains("Apartment", ignoreCase = true)
+                "Houses" -> prop.propertyType.contains("House", ignoreCase = true) ||
+                            prop.propertyType.contains("Duplex", ignoreCase = true) ||
+                            prop.propertyType.contains("Bungalow", ignoreCase = true)
+                "Self-Contain" -> prop.propertyType.contains("Self-Contain", ignoreCase = true) ||
+                                  prop.propertyType.contains("Studio", ignoreCase = true)
+                else -> true
+            }
+
+            val matchesRent = prop.annualRent in filter.minRentNaira..filter.maxRentNaira
             val matchesTruthScore = !filter.onlyHighTruthScore || prop.truthScore >= 90
 
-            matchesQuery && matchesCity && matchesType && matchesRent && matchesTruthScore
+            matchesQuery && matchesCity && matchesType && matchesRooms && matchesCategory && matchesRent && matchesTruthScore
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -119,18 +147,44 @@ class LodgistViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    private val backStack = mutableListOf<ScreenDestination>()
+
     fun navigateTo(destination: ScreenDestination) {
-        _currentScreen.value = destination
+        if (_currentScreen.value != destination) {
+            backStack.add(_currentScreen.value)
+            _currentScreen.value = destination
+        }
     }
 
     fun selectProperty(propertyId: String) {
+        backStack.add(_currentScreen.value)
         _selectedPropertyId.value = propertyId
         _currentScreen.value = ScreenDestination.PROPERTY_DETAIL
     }
 
     fun clearSelectedProperty() {
         _selectedPropertyId.value = null
-        _currentScreen.value = ScreenDestination.EXPLORE
+        if (backStack.isNotEmpty()) {
+            _currentScreen.value = backStack.removeAt(backStack.size - 1)
+        } else {
+            _currentScreen.value = ScreenDestination.EXPLORE
+        }
+    }
+
+    fun popBack(): Boolean {
+        if (_currentScreen.value == ScreenDestination.PROPERTY_DETAIL) {
+            clearSelectedProperty()
+            return true
+        }
+        if (backStack.isNotEmpty()) {
+            _currentScreen.value = backStack.removeAt(backStack.size - 1)
+            return true
+        }
+        if (_currentScreen.value != ScreenDestination.EXPLORE) {
+            _currentScreen.value = ScreenDestination.EXPLORE
+            return true
+        }
+        return false
     }
 
     fun updateSearchQuery(query: String) {
@@ -147,6 +201,18 @@ class LodgistViewModel(application: Application) : AndroidViewModel(application)
 
     fun updateMaxRentFilter(maxRent: Long) {
         _filterState.value = _filterState.value.copy(maxRentNaira = maxRent)
+    }
+
+    fun updatePriceRange(minRent: Long, maxRent: Long) {
+        _filterState.value = _filterState.value.copy(minRentNaira = minRent, maxRentNaira = maxRent)
+    }
+
+    fun updateRoomsFilter(rooms: Int) {
+        _filterState.value = _filterState.value.copy(selectedRooms = rooms)
+    }
+
+    fun updateCategoryFilter(category: String) {
+        _filterState.value = _filterState.value.copy(selectedCategory = category)
     }
 
     fun toggleHighTruthScoreFilter() {
@@ -185,7 +251,12 @@ class LodgistViewModel(application: Application) : AndroidViewModel(application)
                 assignedAgent = "Lodgist Field Inspector (Chidi O.)",
                 status = "CONFIRMED"
             )
-            val bookingId = repository.bookInspection(booking)
+            val bookingResult = repository.bookInspection(booking)
+            if (bookingResult.isFailure) {
+                _userMessage.value = bookingResult.exceptionOrNull()?.message ?: "Viewing request rejected: property is unverified."
+                return@launch
+            }
+            val bookingId = bookingResult.getOrNull() ?: 1L
 
             // Automate platform revenue: Record the ₦3,500 inspection escort escrow token
             val payment = EscrowPaymentEntity(
@@ -245,25 +316,25 @@ class LodgistViewModel(application: Application) : AndroidViewModel(application)
                 hasNINVerified = hasNINVerified,
                 hasBoreholeWater = hasBoreholeWater,
                 hasPrepaidMeter = hasPrepaidMeter,
-                status = "UNDER_VERIFICATION"
+                status = "ADVERTISER_LEAD_PENDING_REVIEW"
             )
             val submissionId = repository.submitLandlordProperty(submission)
 
-            // Automate landlord express audit revenue stream: Record ₦15,000 audit fee
+            // An advertise submission is a lead, not a published home. Payment never buys verification.
             val auditPayment = EscrowPaymentEntity(
-                propertyId = "landlord_listing_$submissionId",
+                propertyId = "landlord_lead_$submissionId",
                 propertyTitle = title,
                 payerName = ownerFullName,
                 payerPhone = ownerPhone,
                 amount = 15000L,
-                purpose = "EXPRESS_VERIFICATION",
+                purpose = "ADVERTISER_LEAD_AUDIT",
                 paymentMethod = "DIRECT_BANK_TRANSFER",
-                transactionRef = "LDG-AUD-${submissionId.toString().padStart(4, '0')}",
-                status = "HELD_IN_ESCROW"
+                transactionRef = "LDG-LEAD-${submissionId.toString().padStart(4, '0')}",
+                status = "PENDING_DISPLAY_REVIEW"
             )
             repository.processEscrowPayment(auditPayment)
 
-            _userMessage.value = "Property submitted! 24h TruthScore field audit initiated."
+            _userMessage.value = "Advertiser lead submitted! Our Owerri field team will verify details before display approval."
             _currentScreen.value = ScreenDestination.ESCROW_VAULT
         }
     }

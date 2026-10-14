@@ -19,6 +19,9 @@ interface PropertyDao {
     @Query("SELECT * FROM properties WHERE id = :propertyId LIMIT 1")
     fun getPropertyById(propertyId: String): Flow<PropertyEntity?>
 
+    @Query("SELECT * FROM properties WHERE id = :propertyId LIMIT 1")
+    suspend fun getPropertyByIdDirect(propertyId: String): PropertyEntity?
+
     @Query("SELECT * FROM properties WHERE city = :city ORDER BY truthScore DESC")
     fun getPropertiesByCity(city: String): Flow<List<PropertyEntity>>
 

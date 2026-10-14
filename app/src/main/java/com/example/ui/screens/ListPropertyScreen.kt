@@ -86,6 +86,12 @@ fun ListPropertyScreen(
     var selectedCity by remember { mutableStateOf("Owerri") }
     var neighborhood by remember { mutableStateOf("") }
     var annualRentText by remember { mutableStateOf("") }
+    var cautionDepositText by remember { mutableStateOf("") }
+    var agencyFeeText by remember { mutableStateOf("") }
+    var legalFeeText by remember { mutableStateOf("") }
+    var inspectionFeeText by remember { mutableStateOf("") }
+    var consentToLeadReview by remember { mutableStateOf(false) }
+    var isSubmittedSuccess by remember { mutableStateOf(false) }
     var bedrooms by remember { mutableStateOf("2") }
     var bathrooms by remember { mutableStateOf("2") }
     var ownerName by remember { mutableStateOf("") }
@@ -307,6 +313,37 @@ fun ListPropertyScreen(
                         isError = hasAttemptedSubmit && (annualRentText.toLongOrNull() ?: 0L) <= 0
                     )
 
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = cautionDepositText,
+                            onValueChange = { cautionDepositText = it.filter { char -> char.isDigit() } },
+                            label = { Text("Caution Deposit (₦)") },
+                            placeholder = { Text("e.g. 100000") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier
+                                .weight(1f)
+                                .testTag("landlord_input_caution"),
+                            singleLine = true
+                        )
+
+                        OutlinedTextField(
+                            value = agencyFeeText,
+                            onValueChange = { agencyFeeText = it.filter { char -> char.isDigit() } },
+                            label = { Text("Agency / Legal Fee (₦)") },
+                            placeholder = { Text("0 for Zero Fee") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier
+                                .weight(1f)
+                                .testTag("landlord_input_agency"),
+                            singleLine = true
+                        )
+                    }
+
                     Spacer(modifier = Modifier.height(18.dp))
 
                     Text(
@@ -385,15 +422,53 @@ fun ListPropertyScreen(
                         onCheckedChange = { hasMeter = it }
                     )
 
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    CheckItem(
+                        text = "I confirm this is an advertiser lead for Lodgist review. Review-for-display is not verification; payment never buys a verification badge.",
+                        checked = consentToLeadReview,
+                        onCheckedChange = { consentToLeadReview = it }
+                    )
+
                     Spacer(modifier = Modifier.height(20.dp))
+
+                    if (isSubmittedSuccess) {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = LodgistTeal.copy(alpha = 0.15f)
+                            )
+                        ) {
+                            Column(modifier = Modifier.padding(14.dp)) {
+                                Text(
+                                    text = "Lead Submitted Successfully",
+                                    fontWeight = FontWeight.Bold,
+                                    color = LodgistTeal,
+                                    fontSize = 14.sp
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "Our Owerri field inspector will review your property details. Note: A submitted lead is not yet a published home. For quick assistance, contact WhatsApp +2349136094315.",
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    lineHeight = 16.sp
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(10.dp))
+                    }
 
                     Button(
                         onClick = {
                             hasAttemptedSubmit = true
                             val rent = annualRentText.toLongOrNull() ?: 0L
                             if (title.isNotBlank() && neighborhood.isNotBlank() && rent > 0 &&
-                                ownerName.isNotBlank() && ownerPhone.length >= 8
+                                ownerName.isNotBlank() && ownerPhone.length >= 8 && consentToLeadReview
                             ) {
+                                isSubmittedSuccess = true
                                 onSubmitProperty(
                                     title,
                                     selectedType,
@@ -417,6 +492,7 @@ fun ListPropertyScreen(
                                 )
                             }
                         },
+                        enabled = !isSubmittedSuccess,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(50.dp)

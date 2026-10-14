@@ -19,6 +19,10 @@ sealed interface PropertyUiState {
         val verifiedOnly: Boolean = false,
         val searchQuery: String = "",
         val locationFilter: String = "",
+        val minPrice: Double = 0.0,
+        val maxPrice: Double = Double.MAX_VALUE,
+        val rooms: Int = 0,
+        val propertyCategory: String = "All",
         val selectedProperty: Property? = null,
         val totalCount: Int = properties.size
     ) : PropertyUiState

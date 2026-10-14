@@ -15,6 +15,21 @@ import retrofit2.http.Query
 interface LodgistApiService {
 
     /**
+     * Live production public listings endpoint on Railway backend.
+     * Returns 200 with non-sample, Lodgist-reviewed public homes (or empty list).
+     */
+    @GET("api/listings")
+    suspend fun getListings(): Response<PropertyListResponseDto>
+
+    /**
+     * Submits an advertiser lead (e.g. for landlords/advertisers on Owerri campus pilot).
+     */
+    @POST("api/advertise")
+    suspend fun submitAdvertiseLead(
+        @Body lead: Map<String, String>
+    ): Response<Map<String, Any>>
+
+    /**
      * Fetches property listings from Lodgist with optional city and verification filters.
      *
      * @param city Optional city filter (e.g., "Owerri", "Lagos", "Abuja").

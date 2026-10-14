@@ -59,6 +59,23 @@ class PropertyRepository(
         )
 
         try {
+            // First attempt live Railway endpoint GET /api/listings
+            val listingsResponse = try {
+                service.getListings()
+            } catch (_: Exception) {
+                null
+            }
+
+            if (listingsResponse != null && listingsResponse.isSuccessful && listingsResponse.body() != null) {
+                val dtos = listingsResponse.body()!!.data
+                val properties = dtos.map { it.toProperty() }
+                if (properties.isNotEmpty()) {
+                    propertyDao.insertProperties(properties)
+                }
+                return@withContext Result.success(properties)
+            }
+
+            // Fallback to legacy getProperties if /api/listings was unavailable
             val response = service.getProperties(city = city, verified = verified)
             if (response.isSuccessful && response.body() != null) {
                 val dtos = response.body() ?: emptyList()
@@ -67,6 +84,44 @@ class PropertyRepository(
                     propertyDao.insertProperties(properties)
                 }
                 Result.success(properties)
+            } else {
+                Result.failure(Exception("HTTP ${response.code()}: ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Submits an advertiser lead for the Owerri campus pilot.
+     * Note: Form submission is a lead, not an automatically published home.
+     */
+    suspend fun submitAdvertiserLead(
+        name: String,
+        phone: String,
+        email: String,
+        message: String,
+        authority: String = "AUTHORIZED",
+        photoPermission: Boolean = true,
+        availability: String = "AVAILABLE_NOW"
+    ): Result<Boolean> = withContext(ioDispatcher) {
+        val service = apiService ?: return@withContext Result.failure(
+            IllegalStateException("LodgistApiService is not configured.")
+        )
+        try {
+            val payload = mapOf(
+                "name" to name,
+                "phone" to phone,
+                "email" to email,
+                "message" to message,
+                "authority" to authority,
+                "photoPermission" to photoPermission.toString(),
+                "availability" to availability,
+                "isTest" to "true"
+            )
+            val response = service.submitAdvertiseLead(payload)
+            if (response.isSuccessful) {
+                Result.success(true)
             } else {
                 Result.failure(Exception("HTTP ${response.code()}: ${response.message()}"))
             }
