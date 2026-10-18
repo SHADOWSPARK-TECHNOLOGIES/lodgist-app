@@ -70,6 +70,7 @@ import com.example.ui.components.SpatialLabNeighborhoodCard
 import com.example.ui.components.TruthScoreAuditCard
 import com.example.ui.components.TruthScoreCircle
 import com.example.ui.components.VerifiedBadge
+import com.example.ui.components.verificationBadgeLabel
 import com.example.ui.components.formatNaira
 import com.example.ui.components.openWhatsAppSupport
 import com.example.ui.theme.LodgistOrange
@@ -155,7 +156,7 @@ fun PropertyDetailScreen(
                                 modifier = Modifier.size(16.dp)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Escrow Rent", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            Text("Pay via WhatsApp", fontSize = 13.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -223,7 +224,7 @@ fun PropertyDetailScreen(
                                     type = "text/plain"
                                     putExtra(
                                         Intent.EXTRA_TEXT,
-                                        "Check out this verified place on Lodgist: ${property.title} in ${property.neighborhood}, ${property.city}. Rent: ${formatNaira(property.annualRent)}/yr. TruthScore: ${property.truthScore}%. Visit https://lodgist.online"
+                                        "Check out this place on Lodgist: ${property.title} in ${property.neighborhood}, ${property.city}. Rent: ${formatNaira(property.annualRent)}/yr. TruthScore: ${property.truthScore}%. Visit https://lodgist.online"
                                     )
                                 }
                                 context.startActivity(Intent.createChooser(shareIntent, "Share Property"))
@@ -264,7 +265,7 @@ fun PropertyDetailScreen(
                         .padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    VerifiedBadge(isVerified = property.verificationStatus == "VERIFIED")
+                    VerifiedBadge(verificationStatus = property.verificationStatus)
                 }
             }
 
@@ -326,7 +327,7 @@ fun PropertyDetailScreen(
                     SpecColumn(icon = Icons.Default.Bed, label = "Bedrooms", value = "${property.bedrooms}")
                     SpecColumn(icon = Icons.Default.Bathtub, label = "Bathrooms", value = "${property.bathrooms}")
                     SpecColumn(icon = Icons.Default.MeetingRoom, label = "Units Left", value = "${property.totalAvailableUnits}")
-                    SpecColumn(icon = Icons.Default.Shield, label = "Status", value = "Verified")
+                    SpecColumn(icon = Icons.Default.Shield, label = "Status", value = verificationBadgeLabel(property.verificationStatus))
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -352,7 +353,7 @@ fun PropertyDetailScreen(
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = "Zero Fake Agent Fee",
+                                text = "Confirm fees with Lodgist staff",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = LodgistTeal
@@ -493,7 +494,7 @@ fun PropertyDetailScreen(
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
-                                    text = "Verified Property Owner • NIN Confirmed",
+                                    text = if (property.verificationStatus == "VERIFIED") "Owner checked by Lodgist" else "Owner not yet verified by Lodgist",
                                     fontSize = 11.sp,
                                     color = LodgistTeal,
                                     fontWeight = FontWeight.Medium

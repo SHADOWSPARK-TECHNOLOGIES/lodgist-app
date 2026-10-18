@@ -22,13 +22,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Shield
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -55,7 +52,6 @@ fun EscrowRevenueScreen(
     payments: List<EscrowPaymentEntity>,
     totalEscrow: Long,
     totalRevenue: Long,
-    onReleaseEscrow: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -98,13 +94,13 @@ fun EscrowRevenueScreen(
                             Spacer(modifier = Modifier.width(10.dp))
                             Column {
                                 Text(
-                                    text = "Lodgist Escrow Vault",
+                                    text = "Lodgist Payment Requests",
                                     fontSize = 17.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
-                                    text = "Insured Tenant-Landlord Protection",
+                                    text = "Confirmed manually by Lodgist staff on WhatsApp",
                                     fontSize = 11.sp,
                                     color = LodgistTeal,
                                     fontWeight = FontWeight.SemiBold
@@ -127,7 +123,7 @@ fun EscrowRevenueScreen(
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = "Active Escrow",
+                                text = "Manual review",
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = TruthScoreGreen
@@ -143,7 +139,7 @@ fun EscrowRevenueScreen(
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         MetricCard(
-                            label = "Funds Held in Escrow",
+                            label = "Awaiting Staff Confirmation",
                             amount = formatNaira(totalEscrow),
                             icon = Icons.Default.Lock,
                             tint = LodgistTeal,
@@ -151,7 +147,7 @@ fun EscrowRevenueScreen(
                         )
 
                         MetricCard(
-                            label = "Platform Revenue",
+                            label = "Staff-Confirmed Fees",
                             amount = formatNaira(totalRevenue),
                             icon = Icons.Default.MonetizationOn,
                             tint = LodgistOrange,
@@ -162,7 +158,7 @@ fun EscrowRevenueScreen(
             }
         }
 
-        // How Escrow Protects Revenue
+        // How manual payments work
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -185,14 +181,14 @@ fun EscrowRevenueScreen(
                     Spacer(modifier = Modifier.width(10.dp))
                     Column {
                         Text(
-                            text = "How Lodgist Generates & Protects Revenue",
+                            text = "How Lodgist payments work",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(modifier = Modifier.height(3.dp))
                         Text(
-                            text = "1. Renters pay ₦3,500 inspection tokens to reserve an escort.\n2. Landlords pay ₦15,000 for 24h express TruthScore drone audits.\n3. Annual rent stays locked until the tenant receives keys and moves in.",
+                            text = "1. Request payment details from Lodgist staff on WhatsApp.\n2. Pay only after Lodgist staff confirm on WhatsApp.\n3. A request stays pending in this app until Lodgist staff confirm it; the app never confirms payment.",
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             lineHeight = 16.sp
@@ -210,7 +206,7 @@ fun EscrowRevenueScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Live Escrow Transactions (${payments.size})",
+                    text = "Payment Requests (${payments.size})",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -243,14 +239,14 @@ fun EscrowRevenueScreen(
                         )
                         Spacer(modifier = Modifier.height(10.dp))
                         Text(
-                            text = "No Escrow Transactions Yet",
+                            text = "No Payment Requests Yet",
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "When you book an inspection or pay rent via Lodgist, transaction receipts and escrow holding proofs appear here.",
+                            text = "When you request an inspection or rent payment, the request appears here while it awaits Lodgist staff confirmation.",
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             lineHeight = 15.sp
@@ -287,7 +283,7 @@ fun EscrowRevenueScreen(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(6.dp))
                                     .background(
-                                        if (item.status == "HELD_IN_ESCROW") LodgistTeal.copy(alpha = 0.15f)
+                                        if (item.status != "PAID") LodgistTeal.copy(alpha = 0.15f)
                                         else TruthScoreGreen.copy(alpha = 0.15f)
                                     )
                                     .padding(horizontal = 7.dp, vertical = 2.dp)
@@ -296,7 +292,7 @@ fun EscrowRevenueScreen(
                                     text = item.status.replace("_", " "),
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (item.status == "HELD_IN_ESCROW") LodgistTeal else TruthScoreGreen
+                                    color = if (item.status != "PAID") LodgistTeal else TruthScoreGreen
                                 )
                             }
                         }
@@ -330,25 +326,7 @@ fun EscrowRevenueScreen(
                             )
                         }
 
-                        if (item.status == "HELD_IN_ESCROW" && item.purpose == "ANNUAL_RENT_ESCROW") {
-                            Spacer(modifier = Modifier.height(10.dp))
-                            Button(
-                                onClick = { onReleaseEscrow(item.id) },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(40.dp),
-                                shape = RoundedCornerShape(8.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = TruthScoreGreen)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Key,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(14.dp)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("Keys Received — Release to Landlord", fontSize = 11.sp)
-                            }
-                        }
+                        // Release/refund of funds is handled only by Lodgist staff, never from the app.
                     }
                 }
             }

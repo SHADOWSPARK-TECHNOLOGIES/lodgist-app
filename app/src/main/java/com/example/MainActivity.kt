@@ -87,17 +87,17 @@ fun LodgistApp(viewModel: LodgistViewModel) {
                         ScreenDestination.SEARCH_PROPERTIES -> "Search Properties"
                         ScreenDestination.INSPECTIONS -> "My Inspections"
                         ScreenDestination.SAVED -> "Saved Properties"
-                        ScreenDestination.ESCROW_VAULT -> "Escrow Vault"
+                        ScreenDestination.ESCROW_VAULT -> "Payment Requests"
                         ScreenDestination.TRUST_SAFETY -> "Trust & Safety"
                         ScreenDestination.LIST_PROPERTY -> "List Property"
                         ScreenDestination.PROPERTY_DETAIL -> "Property Details"
                     },
                     subtitle = when (currentScreen) {
-                        ScreenDestination.EXPLORE -> "Verified Nigeria Rentals"
+                        ScreenDestination.EXPLORE -> "Nigeria Rentals"
                         ScreenDestination.SEARCH_PROPERTIES -> "Filter Houses & Flats"
                         ScreenDestination.INSPECTIONS -> "Field Walkthroughs"
                         ScreenDestination.SAVED -> "Bookmarked Homes"
-                        ScreenDestination.ESCROW_VAULT -> "Insured Rent Protection"
+                        ScreenDestination.ESCROW_VAULT -> "Awaiting Lodgist staff confirmation"
                         ScreenDestination.TRUST_SAFETY -> "TruthScore™ Audit System"
                         ScreenDestination.LIST_PROPERTY -> "Landlord & Owner Portal"
                         ScreenDestination.PROPERTY_DETAIL -> ""
@@ -208,7 +208,6 @@ fun LodgistApp(viewModel: LodgistViewModel) {
                     payments = escrowPayments,
                     totalEscrow = totalEscrow,
                     totalRevenue = totalRevenue,
-                    onReleaseEscrow = { viewModel.releaseEscrowToLandlord(it) },
                     modifier = Modifier.padding(innerPadding)
                 )
             }
@@ -264,26 +263,26 @@ fun LodgistApp(viewModel: LodgistViewModel) {
             )
         }
 
-        // Annual Rent Escrow Payment Bottom Sheet
+        // Rent payment request bottom sheet (WhatsApp handoff, staff confirm manually)
         propertyForEscrowPayment?.let { prop ->
             PaymentCheckoutSheet(
-                title = "Annual Rent Escrow Protection",
+                title = "Annual rent and move-in costs",
                 subtitle = prop.title,
                 amountNaira = prop.totalMoveInCost,
                 purpose = "ANNUAL_RENT_ESCROW",
                 propertyId = prop.id,
-                payerName = "Verified Tenant",
-                payerPhone = "08012345678",
+                payerName = "",
+                payerPhone = "",
                 onDismiss = { propertyForEscrowPayment = null },
-                onPaymentSuccess = { method, ref ->
+                onRequestSent = { method, ref ->
+                    // Records a pending request only; the sheet stays open on its "awaiting staff confirmation" state.
                     viewModel.payRentIntoEscrow(
                         property = prop,
-                        tenantName = "Verified Tenant",
-                        tenantPhone = "08012345678",
+                        tenantName = "Not provided",
+                        tenantPhone = "",
                         method = method,
                         ref = ref
                     )
-                    propertyForEscrowPayment = null
                 }
             )
         }

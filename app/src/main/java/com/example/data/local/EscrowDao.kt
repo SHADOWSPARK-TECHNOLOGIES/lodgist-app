@@ -12,10 +12,12 @@ interface EscrowDao {
     @Query("SELECT * FROM escrow_payments ORDER BY timestamp DESC")
     fun getAllPayments(): Flow<List<EscrowPaymentEntity>>
 
-    @Query("SELECT SUM(amount) FROM escrow_payments WHERE status = 'HELD_IN_ESCROW'")
+    // Amount of requests still awaiting Lodgist staff confirmation (nothing here is held or paid).
+    @Query("SELECT SUM(amount) FROM escrow_payments WHERE status IN ('PENDING_PAYMENT', 'AWAITING_PROOF')")
     fun getTotalEscrowVolume(): Flow<Long?>
 
-    @Query("SELECT SUM(amount) FROM escrow_payments WHERE purpose = 'INSPECTION_TOKEN' OR purpose = 'EXPRESS_VERIFICATION'")
+    // Only staff-confirmed (PAID) records count as revenue. The app never writes PAID locally.
+    @Query("SELECT SUM(amount) FROM escrow_payments WHERE status = 'PAID' AND (purpose = 'INSPECTION_TOKEN' OR purpose = 'EXPRESS_VERIFICATION')")
     fun getTotalPlatformRevenue(): Flow<Long?>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

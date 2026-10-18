@@ -248,8 +248,9 @@ class LodgistViewModel(
                 preferredDate = preferredDate,
                 preferredTimeSlot = preferredTimeSlot,
                 notes = notes,
-                assignedAgent = "Lodgist Field Inspector (Chidi O.)",
-                status = "CONFIRMED"
+                assignedAgent = InspectionBookingEntity.AGENT_AWAITING_ASSIGNMENT,
+                // A request only. Lodgist staff confirm visits manually; the app never marks one confirmed.
+                status = InspectionBookingEntity.STATUS_INSPECTION_PENDING
             )
             val bookingResult = repository.bookInspection(booking)
             if (bookingResult.isFailure) {
@@ -258,7 +259,8 @@ class LodgistViewModel(
             }
             val bookingId = bookingResult.getOrNull() ?: 1L
 
-            // Automate platform revenue: Record the ₦3,500 inspection escort escrow token
+            // Record the ₦3,500 inspection fee as a request awaiting Lodgist staff confirmation.
+            // No payment is taken in the app; staff confirm payment manually on WhatsApp.
             val payment = EscrowPaymentEntity(
                 propertyId = property.id,
                 propertyTitle = property.title,
@@ -266,13 +268,13 @@ class LodgistViewModel(
                 payerPhone = clientPhone,
                 amount = 3500L,
                 purpose = "INSPECTION_TOKEN",
-                paymentMethod = "DEBIT_CARD",
+                paymentMethod = com.example.ui.components.PAYMENT_METHOD_WHATSAPP_MANUAL,
                 transactionRef = "LDG-INS-${bookingId.toString().padStart(4, '0')}",
-                status = "HELD_IN_ESCROW"
+                status = EscrowPaymentEntity.STATUS_PENDING_PAYMENT
             )
             repository.processEscrowPayment(payment)
 
-            _userMessage.value = "Inspection booked! ₦3,500 token secured in Escrow. Officer assigned for $preferredDate."
+            _userMessage.value = "Inspection request sent for $preferredDate. Lodgist staff will confirm the visit and fee on WhatsApp. Nothing is booked or paid until they confirm."
             _currentScreen.value = ScreenDestination.INSPECTIONS
         }
     }
@@ -280,7 +282,7 @@ class LodgistViewModel(
     fun cancelInspection(bookingId: Long) {
         viewModelScope.launch {
             repository.cancelInspection(bookingId)
-            _userMessage.value = "Inspection visit cancelled & escrow token refunded."
+            _userMessage.value = "Inspection request cancelled. Contact Lodgist staff on WhatsApp about any payment you already made."
         }
     }
 
@@ -356,18 +358,12 @@ class LodgistViewModel(
                 purpose = "ANNUAL_RENT_ESCROW",
                 paymentMethod = method,
                 transactionRef = ref,
-                status = "HELD_IN_ESCROW"
+                // Request only: awaiting Lodgist staff confirmation. Never PAID/escrow without a server response.
+                status = EscrowPaymentEntity.STATUS_PENDING_PAYMENT
             )
             repository.processEscrowPayment(payment)
-            _userMessage.value = "${formatNaira(property.totalMoveInCost)} rent secured in Lodgist Escrow! Safe until move-in."
+            _userMessage.value = "Payment request sent on WhatsApp. Awaiting Lodgist staff confirmation; do not pay until staff confirm."
             _currentScreen.value = ScreenDestination.ESCROW_VAULT
-        }
-    }
-
-    fun releaseEscrowToLandlord(paymentId: Long) {
-        viewModelScope.launch {
-            repository.releaseEscrow(paymentId)
-            _userMessage.value = "Escrow funds released to landlord. Move-in confirmed!"
         }
     }
 

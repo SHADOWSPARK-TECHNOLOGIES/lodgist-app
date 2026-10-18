@@ -14,7 +14,14 @@ data class InspectionBookingEntity(
     val preferredDate: String,      // e.g. "Tomorrow, Oct 5"
     val preferredTimeSlot: String,  // e.g. "Morning (10:00 AM - 12:00 PM)"
     val notes: String = "",
-    val assignedAgent: String = "Lodgist Field Inspector (Chidi O.)",
-    val status: String = "CONFIRMED", // "CONFIRMED", "INSPECTION_PENDING", "COMPLETED", "CANCELLED"
+    val assignedAgent: String = AGENT_AWAITING_ASSIGNMENT,
+    // Local requests start as INSPECTION_PENDING. Other values ("CONFIRMED", "COMPLETED", "CANCELLED")
+    // must come from Lodgist staff/server. Kotlin default only: no SQL column default, schema (v3) unchanged.
+    val status: String = STATUS_INSPECTION_PENDING,
     val bookingTimestamp: Long = System.currentTimeMillis()
-)
+) {
+    companion object {
+        const val STATUS_INSPECTION_PENDING = "INSPECTION_PENDING"
+        const val AGENT_AWAITING_ASSIGNMENT = "Awaiting Lodgist staff assignment"
+    }
+}

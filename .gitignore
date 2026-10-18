@@ -34,3 +34,7 @@ output-metadata.json
 
 # Android Studio device-picker state (Android.gitignore)
 deploymentTargetDropDown.xml
+
+# Firebase config stays out of git (LM-01). Key rotation/history is LM-02.
+app/google-services.json
+google-services.json

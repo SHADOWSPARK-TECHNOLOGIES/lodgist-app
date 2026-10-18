@@ -68,7 +68,7 @@ fun InspectionsScreen(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Top Banner: Safety Guarantee
+        // Top Banner: Safety guidance
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),

@@ -43,7 +43,7 @@ import com.example.ui.theme.LodgistOrange
 import com.example.ui.theme.LodgistTeal
 
 fun openWhatsAppSupport(context: Context, customMessage: String? = null) {
-    val message = customMessage ?: "Hello Lodgist Support, I am browsing verified rentals on the Lodgist Android App and need assistance."
+    val message = customMessage ?: "Hello Lodgist Support, I am browsing rentals on the Lodgist Android App and need assistance."
     val url = "https://wa.me/2349136094315?text=" + Uri.encode(message)
     val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
     try {
@@ -58,7 +58,7 @@ fun openWhatsAppSupport(context: Context, customMessage: String? = null) {
 @Composable
 fun LodgistTopBar(
     title: String = "Lodgist",
-    subtitle: String = "Verified Nigeria Rentals",
+    subtitle: String = "Nigeria Rentals",
     canNavigateBack: Boolean = false,
     onNavigateBack: () -> Unit = {},
     showWhatsAppButton: Boolean = true,

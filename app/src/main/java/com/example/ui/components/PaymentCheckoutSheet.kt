@@ -20,18 +20,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountBalance
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.CreditCard
-import androidx.compose.material.icons.filled.Dialpad
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Receipt
+import androidx.compose.material.icons.filled.Forum
+import androidx.compose.material.icons.filled.HourglassTop
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -44,21 +39,40 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ui.theme.LodgistOrange
 import com.example.ui.theme.LodgistTeal
-import com.example.ui.theme.TruthScoreGreen
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+
+/** Payment channel recorded for every request made from this sheet. The app never takes payment itself. */
+const val PAYMENT_METHOD_WHATSAPP_MANUAL = "WHATSAPP_MANUAL"
+
+/**
+ * Prefilled WhatsApp text for a payment request. It carries only the listing reference and the
+ * request reference. It never contains card, bank or account details: Lodgist staff send the
+ * approved payment instructions on WhatsApp and confirm payment manually.
+ */
+fun buildWhatsAppPaymentRequestMessage(
+    title: String,
+    listingTitle: String,
+    propertyId: String,
+    amountNaira: Long,
+    requestRef: String
+): String {
+    return "Hello Lodgist, I would like payment instructions for $title.\n" +
+        "Listing: $listingTitle\n" +
+        "Listing reference: $propertyId\n" +
+        "Amount shown in app: ${formatNaira(amountNaira)}\n" +
+        "Request reference: $requestRef\n" +
+        "I understand nothing is paid or confirmed until Lodgist staff confirm it."
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -72,13 +86,11 @@ fun PaymentCheckoutSheet(
     payerPhone: String,
     sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
     onDismiss: () -> Unit,
-    onPaymentSuccess: (method: String, ref: String) -> Unit
+    onRequestSent: (method: String, ref: String) -> Unit
 ) {
-    var selectedMethod by remember { mutableStateOf("DEBIT_CARD") } // "DEBIT_CARD", "BANK_TRANSFER", "USSD"
-    var isProcessing by remember { mutableStateOf(false) }
-    var isSuccess by remember { mutableStateOf(false) }
+    var isRequestSent by remember { mutableStateOf(false) }
     var generatedRef by remember { mutableStateOf("") }
-    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -93,7 +105,7 @@ fun PaymentCheckoutSheet(
                 .imePadding()
                 .padding(bottom = 36.dp)
         ) {
-            if (!isSuccess) {
+            if (!isRequestSent) {
                 // Header
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -102,7 +114,7 @@ fun PaymentCheckoutSheet(
                 ) {
                     Column {
                         Text(
-                            text = "Lodgist Escrow Checkout",
+                            text = "Pay via Lodgist WhatsApp",
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
@@ -122,14 +134,14 @@ fun PaymentCheckoutSheet(
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Lock,
-                            contentDescription = "Secure",
+                            imageVector = Icons.Default.Shield,
+                            contentDescription = null,
                             tint = LodgistTeal,
                             modifier = Modifier.size(13.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "256-bit SSL",
+                            text = "Staff-confirmed",
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
                             color = LodgistTeal
@@ -160,7 +172,7 @@ fun PaymentCheckoutSheet(
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = "Zero scam guarantee • Held in verified escrow",
+                                text = "Pay only after Lodgist staff confirm on WhatsApp",
                                 fontSize = 10.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -178,7 +190,7 @@ fun PaymentCheckoutSheet(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = "Select Payment Channel",
+                    text = "How payment works",
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -186,38 +198,17 @@ fun PaymentCheckoutSheet(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // Payment Methods
                 PaymentOptionRow(
-                    title = "Debit Card (Verve, Mastercard, Visa)",
-                    subtitle = "Instant confirmation via secured Nigerian gateway",
-                    icon = Icons.Default.CreditCard,
-                    isSelected = selectedMethod == "DEBIT_CARD",
-                    onClick = { selectedMethod = "DEBIT_CARD" }
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                PaymentOptionRow(
-                    title = "Direct Bank Transfer (Instant Escrow)",
-                    subtitle = "Pay to dedicated Lodgist / Wema Bank virtual account",
-                    icon = Icons.Default.AccountBalance,
-                    isSelected = selectedMethod == "BANK_TRANSFER",
-                    onClick = { selectedMethod = "BANK_TRANSFER" }
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                PaymentOptionRow(
-                    title = "USSD Quick Code (*737#, *894#, *966#)",
-                    subtitle = "Dial directly from your registered mobile SIM",
-                    icon = Icons.Default.Dialpad,
-                    isSelected = selectedMethod == "USSD",
-                    onClick = { selectedMethod = "USSD" }
+                    title = "WhatsApp Lodgist staff",
+                    subtitle = "Staff send approved payment instructions and confirm payment manually",
+                    icon = Icons.Default.Forum,
+                    isSelected = true,
+                    onClick = {}
                 )
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // Escrow details info
+                // Manual confirmation info
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -234,7 +225,7 @@ fun PaymentCheckoutSheet(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Funds stay locked in escrow until the inspection report is completed. 100% money-back if inspection is cancelled.",
+                        text = "Do not send money until Lodgist staff confirm on WhatsApp. Only Lodgist staff can confirm a payment; this app cannot.",
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurface,
                         lineHeight = 15.sp
@@ -243,51 +234,45 @@ fun PaymentCheckoutSheet(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Pay Button
+                // WhatsApp handoff button: opens wa.me with a prefilled request. No payment happens here.
                 Button(
                     onClick = {
-                        isProcessing = true
-                        scope.launch {
-                            delay(1200) // Simulate fast secure gateway response
-                            val ref = "LDG-${System.currentTimeMillis().toString().takeLast(6)}"
-                            generatedRef = ref
-                            isProcessing = false
-                            isSuccess = true
-                            onPaymentSuccess(selectedMethod, ref)
-                        }
+                        val ref = "LDG-REQ-${System.currentTimeMillis().toString().takeLast(6)}"
+                        generatedRef = ref
+                        openWhatsAppSupport(
+                            context,
+                            buildWhatsAppPaymentRequestMessage(
+                                title = title,
+                                listingTitle = subtitle,
+                                propertyId = propertyId,
+                                amountNaira = amountNaira,
+                                requestRef = ref
+                            )
+                        )
+                        isRequestSent = true
+                        onRequestSent(PAYMENT_METHOD_WHATSAPP_MANUAL, ref)
                     },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp)
                         .testTag("submit_escrow_payment_btn"),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = LodgistOrange),
-                    enabled = !isProcessing
+                    colors = ButtonDefaults.buttonColors(containerColor = LodgistOrange)
                 ) {
-                    if (isProcessing) {
-                        CircularProgressIndicator(
-                            color = Color.White,
-                            modifier = Modifier.size(20.dp),
-                            strokeWidth = 2.dp
-                        )
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Text("Authorizing Payment...", fontSize = 14.sp)
-                    } else {
-                        Icon(
-                            imageVector = Icons.Default.Lock,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Authorize ${formatNaira(amountNaira)}",
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
+                    Icon(
+                        imageVector = Icons.Default.Forum,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Request payment details on WhatsApp",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             } else {
-                // Success Screen / Digital Receipt
+                // Request sent: awaiting Lodgist staff confirmation (not a receipt)
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -298,13 +283,13 @@ fun PaymentCheckoutSheet(
                         modifier = Modifier
                             .size(60.dp)
                             .clip(CircleShape)
-                            .background(TruthScoreGreen.copy(alpha = 0.15f)),
+                            .background(LodgistOrange.copy(alpha = 0.15f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Default.CheckCircle,
-                            contentDescription = "Success",
-                            tint = TruthScoreGreen,
+                            imageVector = Icons.Default.HourglassTop,
+                            contentDescription = "Awaiting confirmation",
+                            tint = LodgistOrange,
                             modifier = Modifier.size(36.dp)
                         )
                     }
@@ -312,7 +297,7 @@ fun PaymentCheckoutSheet(
                     Spacer(modifier = Modifier.height(14.dp))
 
                     Text(
-                        text = "Payment Verified & Locked in Escrow!",
+                        text = "Request sent, awaiting Lodgist staff confirmation",
                         fontSize = 17.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -321,7 +306,7 @@ fun PaymentCheckoutSheet(
                     Spacer(modifier = Modifier.height(4.dp))
 
                     Text(
-                        text = "Transaction Reference: $generatedRef",
+                        text = "Request reference: $generatedRef",
                         fontSize = 12.sp,
                         color = LodgistOrange,
                         fontWeight = FontWeight.SemiBold
@@ -337,11 +322,11 @@ fun PaymentCheckoutSheet(
                         )
                     ) {
                         Column(modifier = Modifier.padding(14.dp)) {
-                            ReceiptItem(label = "Item Paid", value = title)
-                            ReceiptItem(label = "Amount", value = formatNaira(amountNaira))
-                            ReceiptItem(label = "Channel", value = selectedMethod.replace("_", " "))
-                            ReceiptItem(label = "Payer", value = payerName.ifBlank { "Verified Tenant" })
-                            ReceiptItem(label = "Escrow Status", value = "Active & Insured")
+                            ReceiptItem(label = "Request for", value = title)
+                            ReceiptItem(label = "Amount shown", value = formatNaira(amountNaira))
+                            ReceiptItem(label = "Channel", value = "WhatsApp (manual)")
+                            ReceiptItem(label = "Payer", value = payerName.ifBlank { "Not provided" })
+                            ReceiptItem(label = "Status", value = "Awaiting staff confirmation")
                         }
                     }
 
@@ -356,7 +341,7 @@ fun PaymentCheckoutSheet(
                         shape = RoundedCornerShape(10.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = LodgistOrange)
                     ) {
-                        Text("View Bookings & Escrow Dashboard", fontWeight = FontWeight.Bold)
+                        Text("Done", fontWeight = FontWeight.Bold)
                     }
                 }
             }

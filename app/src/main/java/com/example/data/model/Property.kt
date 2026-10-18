@@ -52,7 +52,7 @@ data class Property(
             fairPriceIndexed = true,
             description = description,
             amenities = "Water, Electricity, Security",
-            landlordName = "Lodgist Verified Host",
+            landlordName = "Lodgist listing host",
             landlordPhone = "09136094315",
             drawableResName = if (propertyType.contains("House", ignoreCase = true) || propertyType.contains("Duplex", ignoreCase = true)) "building" else "living",
             price = price,

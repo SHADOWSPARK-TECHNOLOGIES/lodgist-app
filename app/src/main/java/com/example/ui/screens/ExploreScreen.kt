@@ -188,7 +188,7 @@ fun ExploreScreen(
                     Spacer(modifier = Modifier.height(4.dp))
 
                     Text(
-                        text = "See what Lodgist checked before you pay. Verified landlords & zero fake agent fees.",
+                        text = "See what Lodgist checked before you pay. Pay only after Lodgist staff confirm on WhatsApp.",
                         fontSize = 12.sp,
                         color = Color.White.copy(alpha = 0.85f),
                         lineHeight = 16.sp
@@ -338,7 +338,7 @@ fun ExploreScreen(
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
-                                    text = "Verified title deed + physical inspection passed",
+                                    text = "Based on listing details; ask Lodgist staff what was checked",
                                     fontSize = 10.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )

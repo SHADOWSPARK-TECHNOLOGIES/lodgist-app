@@ -120,7 +120,7 @@ fun PropertyCard(
                         .align(Alignment.BottomStart)
                         .padding(12.dp)
                 ) {
-                    VerifiedBadge(isVerified = property.verificationStatus == "VERIFIED")
+                    VerifiedBadge(verificationStatus = property.verificationStatus)
                 }
             }
 

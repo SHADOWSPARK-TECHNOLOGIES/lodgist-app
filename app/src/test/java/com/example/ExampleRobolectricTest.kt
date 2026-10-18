@@ -82,13 +82,13 @@ class ExampleRobolectricTest {
       payerPhone = "08012345678",
       amount = 3500L,
       purpose = "INSPECTION_TOKEN",
-      paymentMethod = "DEBIT_CARD",
-      transactionRef = "LDG-INS-0001",
-      status = "HELD_IN_ESCROW"
+      paymentMethod = "WHATSAPP_MANUAL",
+      transactionRef = "LDG-INS-0001"
     )
 
     assertEquals(3500L, inspectionToken.amount)
-    assertEquals("HELD_IN_ESCROW", inspectionToken.status)
+    // Default is a pending request, never an escrow/paid state.
+    assertEquals("PENDING_PAYMENT", inspectionToken.status)
     assertEquals("LDG-INS-0001", inspectionToken.transactionRef)
   }
 
