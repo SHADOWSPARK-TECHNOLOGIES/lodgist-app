@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -25,6 +26,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Forum
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bathtub
 import androidx.compose.material.icons.filled.Bed
@@ -69,11 +71,17 @@ import com.example.data.model.PropertyEntity
 import com.example.ui.components.SpatialLabNeighborhoodCard
 import com.example.ui.components.TruthScoreAuditCard
 import com.example.ui.components.TruthScoreCircle
+import com.example.ui.components.SAMPLE_EXPLANATION
 import com.example.ui.components.VerifiedBadge
+import com.example.ui.components.hasAuditData
+import com.example.ui.components.isBookableOrPayable
+import com.example.ui.components.notBookableLabel
 import com.example.ui.components.verificationBadgeLabel
 import com.example.ui.components.formatNaira
 import com.example.ui.components.openWhatsAppSupport
 import com.example.ui.theme.LodgistOrange
+import com.example.ui.theme.LodgistOrangeButton
+import com.example.ui.theme.accessibleOrange
 import com.example.ui.theme.LodgistTeal
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -120,43 +128,74 @@ fun PropertyDetailScreen(
                             text = formatNaira(property.annualRent),
                             fontSize = 19.sp,
                             fontWeight = FontWeight.ExtraBold,
-                            color = LodgistOrange
+                            color = accessibleOrange()
                         )
                     }
 
-                    val isVerifiedForViewing = (property.verificationStatus == "VERIFIED")
+                    // Only API-backed VERIFIED listings can be inspected or paid for (product call (a)).
+                    val isBookable = isBookableOrPayable(property.verificationStatus)
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedButton(
-                            onClick = { if (isVerifiedForViewing) onBookInspection(property) },
-                            enabled = isVerifiedForViewing,
-                            modifier = Modifier
-                                .height(46.dp)
-                                .testTag("detail_schedule_inspection_btn"),
-                            shape = RoundedCornerShape(10.dp)
-                        ) {
-                            Text(
-                                text = if (isVerifiedForViewing) "Inspect" else "Viewing Restricted",
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Bold
-                            )
+                    if (isBookable) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedButton(
+                                onClick = { onBookInspection(property) },
+                                modifier = Modifier
+                                    .heightIn(min = 48.dp)
+                                    .testTag("detail_schedule_inspection_btn"),
+                                shape = RoundedCornerShape(10.dp)
+                            ) {
+                                Text(
+                                    text = "Inspect",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+
+                            Button(
+                                onClick = { onPayEscrow(property) },
+                                modifier = Modifier
+                                    .heightIn(min = 48.dp)
+                                    .testTag("detail_pay_escrow_btn"),
+                                shape = RoundedCornerShape(10.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = LodgistOrangeButton, contentColor = Color.White)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Forum,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Pay via WhatsApp", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            }
                         }
-
-                        Button(
-                            onClick = { onPayEscrow(property) },
+                    } else {
+                        Column(
                             modifier = Modifier
-                                .height(46.dp)
-                                .testTag("detail_pay_escrow_btn"),
-                            shape = RoundedCornerShape(10.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = LodgistOrange)
+                                .weight(1f)
+                                .padding(start = 12.dp),
+                            horizontalAlignment = Alignment.End
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Shield,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp)
+                            Button(
+                                onClick = {},
+                                enabled = false,
+                                modifier = Modifier
+                                    .heightIn(min = 48.dp)
+                                    .testTag("detail_not_bookable_btn"),
+                                shape = RoundedCornerShape(10.dp)
+                            ) {
+                                Text(
+                                    text = notBookableLabel(property.verificationStatus),
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                            Text(
+                                text = if (property.verificationStatus == "SAMPLE") SAMPLE_EXPLANATION
+                                else "Booking and payment open once Lodgist staff verify this listing.",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                lineHeight = 15.sp
                             )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Pay via WhatsApp", fontSize = 13.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -224,7 +263,7 @@ fun PropertyDetailScreen(
                                     type = "text/plain"
                                     putExtra(
                                         Intent.EXTRA_TEXT,
-                                        "Check out this place on Lodgist: ${property.title} in ${property.neighborhood}, ${property.city}. Rent: ${formatNaira(property.annualRent)}/yr. TruthScore: ${property.truthScore}%. Visit https://lodgist.online"
+                                        "Check out this place on Lodgist: ${property.title} in ${property.neighborhood}, ${property.city}. Rent: ${formatNaira(property.annualRent)}/yr. ${if (hasAuditData(property)) "TruthScore: ${property.truthScore}%. " else ""}Visit https://lodgist.online"
                                     )
                                 }
                                 context.startActivity(Intent.createChooser(shareIntent, "Share Property"))
@@ -310,7 +349,9 @@ fun PropertyDetailScreen(
                     }
 
                     Spacer(modifier = Modifier.width(12.dp))
-                    TruthScoreCircle(score = property.truthScore, size = 58)
+                    if (hasAuditData(property)) {
+                        TruthScoreCircle(score = property.truthScore, size = 58)
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -363,7 +404,7 @@ fun PropertyDetailScreen(
                         Spacer(modifier = Modifier.height(10.dp))
 
                         PriceRow(label = "Annual Base Rent", amount = property.annualRent)
-                        PriceRow(label = "Caution Deposit (Refundable)", amount = property.cautionDeposit)
+                        PriceRow(label = "Caution deposit (refund terms set by landlord; confirm with Lodgist staff)", amount = property.cautionDeposit)
                         PriceRow(label = "Service Charge", amount = property.serviceCharge)
 
                         HorizontalDivider(

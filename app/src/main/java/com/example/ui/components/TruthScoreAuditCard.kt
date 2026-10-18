@@ -34,6 +34,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -76,15 +78,33 @@ fun TruthScoreAuditCard(
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
+                        // Claimed only when backed by audit data (a TruthScore above 0).
                         Text(
-                            text = "Audited by ShadowSpark field officers",
+                            text = when {
+                                hasAuditData(property) -> "Audited by ShadowSpark field officers"
+                                property.verificationStatus == "SAMPLE" -> "Sample data, nothing checked"
+                                else -> "Not yet audited"
+                            },
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
 
-                TruthScoreCircle(score = property.truthScore, size = 52)
+                if (hasAuditData(property)) {
+                    TruthScoreCircle(score = property.truthScore, size = 52)
+                }
+            }
+
+            if (!hasAuditData(property)) {
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    text = "No audit results to show for this listing. Ask Lodgist on WhatsApp what has been checked before you pay.",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    lineHeight = 16.sp
+                )
+                return@Column
             }
 
             Spacer(modifier = Modifier.height(14.dp))
@@ -100,35 +120,35 @@ fun TruthScoreAuditCard(
 
             // 5 Pillars
             AuditItem(
-                title = "Title Document Verified",
+                title = "Title document",
                 subtitle = "Deed of Assignment / Governor's Consent / Family Root checked",
                 isPassed = property.titleDocumentChecked,
                 icon = Icons.Default.AssignmentTurnedIn
             )
 
             AuditItem(
-                title = "Landlord Identity & Authority",
+                title = "Landlord identity & authority",
                 subtitle = "NIN / BVN matched to property owner or registered mandate",
                 isPassed = property.landlordIdentityChecked,
                 icon = Icons.Default.AccountCircle
             )
 
             AuditItem(
-                title = "Price Against Nearby Homes",
+                title = "Price against nearby homes",
                 subtitle = "Rent matches neighborhood benchmark — no inflated agent markup",
                 isPassed = property.fairPriceIndexed,
                 icon = Icons.Default.PriceCheck
             )
 
             AuditItem(
-                title = "Disputes & Demolition Check",
+                title = "Disputes & demolition",
                 subtitle = "Zero pending litigation, community disputes, or demolition marks",
                 isPassed = property.disputeFree,
                 icon = Icons.Default.Gavel
             )
 
             AuditItem(
-                title = "Physical Inspection Audit",
+                title = "Physical inspection",
                 subtitle = "Borehole water test, prepaid meter, wiring safety & rainy season flood risk",
                 isPassed = property.physicalInspectionPassed,
                 icon = Icons.Default.LocationCity
@@ -147,7 +167,11 @@ private fun AuditItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 6.dp),
+            .padding(vertical = 6.dp)
+            // Read as one item, e.g. "Title document: not checked".
+            .clearAndSetSemantics {
+                contentDescription = "$title: ${if (isPassed) "checked" else "not checked"}. $subtitle"
+            },
         verticalAlignment = Alignment.Top
     ) {
         Box(
@@ -162,7 +186,7 @@ private fun AuditItem(
         ) {
             Icon(
                 imageVector = if (isPassed) Icons.Default.Check else Icons.Default.Close,
-                contentDescription = if (isPassed) "Passed" else "Pending",
+                contentDescription = null,
                 tint = if (isPassed) TruthScoreGreen else TruthScoreRed,
                 modifier = Modifier.size(16.dp)
             )

@@ -47,8 +47,9 @@ interface PropertyDao {
     suspend fun deletePropertyById(propertyId: String)
 
     @Query(
-        "UPDATE properties SET verificationStatus = 'SAMPLE', verified = 0, " +
-            "titleDocumentChecked = 0, landlordIdentityChecked = 0, physicalInspectionPassed = 0 " +
+        "UPDATE properties SET verificationStatus = 'SAMPLE', verified = 0, truthScore = 0, " +
+            "titleDocumentChecked = 0, landlordIdentityChecked = 0, physicalInspectionPassed = 0, " +
+            "disputeFree = 0, fairPriceIndexed = 0 " +
             "WHERE id IN (:ids)"
     )
     suspend fun markAsSample(ids: List<String>)

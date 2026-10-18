@@ -98,12 +98,13 @@ fun VerifiedBadge(
 ) {
     // "Verified" renders only from API-backed status ("VERIFIED"). Seeded rows are "SAMPLE".
     val isVerified = verificationStatus == "VERIFIED"
-    val badgeColor = if (isVerified) Color(0xFF1ABC9C) else Color(0xFF7F8C8D)
+    // >= 4.5:1 on the opaque surface background (also when the badge sits on a photo).
+    val badgeColor = if (isVerified) com.example.ui.theme.accessibleTeal() else com.example.ui.theme.accessibleGrey()
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .clip(RoundedCornerShape(8.dp))
-            .background(badgeColor.copy(alpha = 0.15f))
+            .background(MaterialTheme.colorScheme.surface)
             .border(1.dp, badgeColor.copy(alpha = 0.35f), RoundedCornerShape(8.dp))
             .padding(horizontal = 8.dp, vertical = 4.dp)
     ) {

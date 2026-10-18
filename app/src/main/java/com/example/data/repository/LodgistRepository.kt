@@ -70,6 +70,12 @@ class LodgistRepository(
         }
     }
 
+    suspend fun hasPaymentWithRef(ref: String): Boolean {
+        return withContext(Dispatchers.IO) {
+            escrowDao.countByRef(ref) > 0
+        }
+    }
+
     suspend fun checkAndSeedInitialData() {
         withContext(Dispatchers.IO) {
             val count = propertyDao.getPropertyCount()

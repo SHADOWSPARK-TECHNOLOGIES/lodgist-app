@@ -16,6 +16,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -68,7 +69,9 @@ fun LodgistApp(viewModel: LodgistViewModel) {
 
     val snackbarHostState = remember { SnackbarHostState() }
     var propertyForBooking by remember { mutableStateOf<PropertyEntity?>(null) }
-    var propertyForEscrowPayment by remember { mutableStateOf<PropertyEntity?>(null) }
+    // Saved across rotation/process death so the pending WhatsApp handoff isn't lost.
+    var paymentPropertyId by rememberSaveable { mutableStateOf<String?>(null) }
+    val allProperties by viewModel.allProperties.collectAsStateWithLifecycle()
 
     LaunchedEffect(userMessage) {
         userMessage?.let { msg ->
@@ -176,7 +179,7 @@ fun LodgistApp(viewModel: LodgistViewModel) {
                         onBack = { viewModel.clearSelectedProperty() },
                         onToggleFavorite = { viewModel.toggleFavorite(it) },
                         onBookInspection = { propertyForBooking = it },
-                        onPayEscrow = { propertyForEscrowPayment = it }
+                        onPayEscrow = { paymentPropertyId = it.id }
                     )
                 } ?: run {
                     viewModel.clearSelectedProperty()
@@ -264,7 +267,8 @@ fun LodgistApp(viewModel: LodgistViewModel) {
         }
 
         // Rent payment request bottom sheet (WhatsApp handoff, staff confirm manually)
-        propertyForEscrowPayment?.let { prop ->
+        paymentPropertyId?.let { id -> allProperties.find { it.id == id } }?.let { prop ->
+            val existingRequest = viewModel.existingRentRequest(prop.id)
             PaymentCheckoutSheet(
                 title = "Annual rent and move-in costs",
                 subtitle = prop.title,
@@ -273,9 +277,12 @@ fun LodgistApp(viewModel: LodgistViewModel) {
                 propertyId = prop.id,
                 payerName = "",
                 payerPhone = "",
-                onDismiss = { propertyForEscrowPayment = null },
+                // Reuse the recorded/draft reference on reopen instead of creating a duplicate.
+                requestRef = existingRequest?.transactionRef ?: viewModel.rentRequestRefFor(prop.id),
+                alreadySent = existingRequest != null,
+                onDismiss = { paymentPropertyId = null },
                 onRequestSent = { method, ref ->
-                    // Records a pending request only; the sheet stays open on its "awaiting staff confirmation" state.
+                    // Called only after the user confirms "I sent the message". Records a pending request.
                     viewModel.payRentIntoEscrow(
                         property = prop,
                         tenantName = "Not provided",

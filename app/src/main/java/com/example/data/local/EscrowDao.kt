@@ -23,6 +23,8 @@ interface EscrowDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPayment(payment: EscrowPaymentEntity): Long
 
-    @Query("UPDATE escrow_payments SET status = :newStatus WHERE id = :paymentId")
-    suspend fun updateStatus(paymentId: Long, newStatus: String)
+    @Query("SELECT COUNT(*) FROM escrow_payments WHERE transactionRef = :ref")
+    suspend fun countByRef(ref: String): Int
+
+    // No generic status writer on purpose (LM-01): only Lodgist staff/server may change a payment status.
 }

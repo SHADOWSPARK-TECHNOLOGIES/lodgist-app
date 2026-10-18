@@ -851,7 +851,7 @@ private fun SearchEmptyState(
                 text = if (hasActiveFilters) {
                     "No houses or flats match your current location, room count, or price filter. Try broadening your criteria or resetting filters."
                 } else {
-                    "No listings available at this time. Check back soon for newly verified homes."
+                    "No listings available at this time. Check back soon for new homes."
                 },
                 fontSize = 13.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,

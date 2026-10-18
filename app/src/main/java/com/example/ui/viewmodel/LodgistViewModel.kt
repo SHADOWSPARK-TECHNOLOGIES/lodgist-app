@@ -238,6 +238,11 @@ class LodgistViewModel(
         preferredTimeSlot: String,
         notes: String
     ) {
+        // Samples and unverified listings are never bookable (UI also disables the button).
+        if (!com.example.ui.components.isBookableOrPayable(property.verificationStatus)) {
+            _userMessage.value = com.example.ui.components.notBookableLabel(property.verificationStatus)
+            return
+        }
         viewModelScope.launch {
             val booking = InspectionBookingEntity(
                 propertyId = property.id,
@@ -259,22 +264,9 @@ class LodgistViewModel(
             }
             val bookingId = bookingResult.getOrNull() ?: 1L
 
-            // Record the ₦3,500 inspection fee as a request awaiting Lodgist staff confirmation.
-            // No payment is taken in the app; staff confirm payment manually on WhatsApp.
-            val payment = EscrowPaymentEntity(
-                propertyId = property.id,
-                propertyTitle = property.title,
-                payerName = clientName,
-                payerPhone = clientPhone,
-                amount = 3500L,
-                purpose = "INSPECTION_TOKEN",
-                paymentMethod = com.example.ui.components.PAYMENT_METHOD_WHATSAPP_MANUAL,
-                transactionRef = "LDG-INS-${bookingId.toString().padStart(4, '0')}",
-                status = EscrowPaymentEntity.STATUS_PENDING_PAYMENT
-            )
-            repository.processEscrowPayment(payment)
-
-            _userMessage.value = "Inspection request sent for $preferredDate. Lodgist staff will confirm the visit and fee on WhatsApp. Nothing is booked or paid until they confirm."
+            // Local only: no API call and no payment row. The user sends it to staff via WhatsApp
+            // from the Inspections screen; staff confirm the visit and any fee manually.
+            _userMessage.value = "Inspection request ${inspectionRef(bookingId)} saved on this phone. Send it via WhatsApp from My Inspections to submit. Nothing is booked or paid until Lodgist staff confirm."
             _currentScreen.value = ScreenDestination.INSPECTIONS
         }
     }
@@ -282,7 +274,7 @@ class LodgistViewModel(
     fun cancelInspection(bookingId: Long) {
         viewModelScope.launch {
             repository.cancelInspection(bookingId)
-            _userMessage.value = "Inspection request cancelled. Contact Lodgist staff on WhatsApp about any payment you already made."
+            _userMessage.value = "Request removed from this phone. If you already paid, send your reference to Lodgist on WhatsApp. ${com.example.ui.components.REFUND_COPY}"
         }
     }
 
@@ -322,22 +314,10 @@ class LodgistViewModel(
             )
             val submissionId = repository.submitLandlordProperty(submission)
 
-            // An advertise submission is a lead, not a published home. Payment never buys verification.
-            val auditPayment = EscrowPaymentEntity(
-                propertyId = "landlord_lead_$submissionId",
-                propertyTitle = title,
-                payerName = ownerFullName,
-                payerPhone = ownerPhone,
-                amount = 15000L,
-                purpose = "ADVERTISER_LEAD_AUDIT",
-                paymentMethod = "DIRECT_BANK_TRANSFER",
-                transactionRef = "LDG-LEAD-${submissionId.toString().padStart(4, '0')}",
-                status = "PENDING_DISPLAY_REVIEW"
-            )
-            repository.processEscrowPayment(auditPayment)
-
-            _userMessage.value = "Advertiser lead submitted! Our Owerri field team will verify details before display approval."
-            _currentScreen.value = ScreenDestination.ESCROW_VAULT
+            // An advertise submission is a lead, not a published home, and it is saved locally only.
+            // No payment row is recorded: nothing was paid and payment never buys verification.
+            _userMessage.value = "Listing lead ${leadRef(submissionId)} saved on this phone. Send it via WhatsApp to submit; Lodgist staff review every lead before a listing goes live."
+            _currentScreen.value = ScreenDestination.LIST_PROPERTY
         }
     }
 
@@ -348,7 +328,17 @@ class LodgistViewModel(
         method: String,
         ref: String
     ) {
+        // Samples and unverified listings are never payable (UI also disables the button).
+        if (!com.example.ui.components.isBookableOrPayable(property.verificationStatus)) {
+            _userMessage.value = com.example.ui.components.notBookableLabel(property.verificationStatus)
+            return
+        }
         viewModelScope.launch {
+            // Reopening the sheet reuses the same reference; never record the same request twice.
+            if (repository.hasPaymentWithRef(ref)) {
+                _currentScreen.value = ScreenDestination.ESCROW_VAULT
+                return@launch
+            }
             val payment = EscrowPaymentEntity(
                 propertyId = property.id,
                 propertyTitle = property.title,
@@ -367,8 +357,28 @@ class LodgistViewModel(
         }
     }
 
+    private val draftRentRefs = mutableMapOf<String, String>()
+
+    /** The pending rent request already recorded for this listing, if any. */
+    fun existingRentRequest(propertyId: String): EscrowPaymentEntity? =
+        escrowPayments.value.firstOrNull {
+            it.propertyId == propertyId &&
+                it.purpose == "ANNUAL_RENT_ESCROW" &&
+                it.status == EscrowPaymentEntity.STATUS_PENDING_PAYMENT
+        }
+
+    /** Stable request reference per listing: reuses a recorded one, else one draft ref per listing. */
+    fun rentRequestRefFor(propertyId: String): String =
+        existingRentRequest(propertyId)?.transactionRef
+            ?: draftRentRefs.getOrPut(propertyId) { com.example.ui.components.newRequestRef() }
+
     fun clearUserMessage() {
         _userMessage.value = null
+    }
+
+    companion object {
+        fun inspectionRef(bookingId: Long): String = "LDG-INS-${bookingId.toString().padStart(4, '0')}"
+        fun leadRef(submissionId: Long): String = "LDG-LEAD-${submissionId.toString().padStart(4, '0')}"
     }
 
     private fun formatNaira(amount: Long): String {

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -41,6 +42,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -50,13 +52,25 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.LandlordListingEntity
+import com.example.ui.components.SAVED_LOCALLY_COPY
 import com.example.ui.components.formatNaira
+import com.example.ui.components.openWhatsAppSupport
+import com.example.ui.components.sanitizeForWhatsApp
+import com.example.ui.theme.LodgistOrangeButton
+import com.example.ui.theme.accessibleOrange
+import com.example.ui.theme.accessibleTeal
+import com.example.ui.viewmodel.LodgistViewModel
 import com.example.ui.theme.LodgistOrange
 import com.example.ui.theme.LodgistTeal
 
@@ -148,9 +162,9 @@ fun ListPropertyScreen(
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = "Zero tenant scam. Direct verified renters.",
+                                text = "Lodgist staff review every lead before a listing goes live.",
                                 fontSize = 11.sp,
-                                color = LodgistTeal,
+                                color = accessibleTeal(),
                                 fontWeight = FontWeight.SemiBold
                             )
                         }
@@ -159,7 +173,7 @@ fun ListPropertyScreen(
                     Spacer(modifier = Modifier.height(10.dp))
 
                     Text(
-                        text = "Landlords who list on Lodgist only receive inquiries from pre-verified users. Our field officer will schedule a physical inspection to verify water, light, and title before listing goes live.",
+                        text = "Leads are saved on this phone first. Send yours to Lodgist on WhatsApp so staff can review it. A field visit to check water, light and title can be arranged before a listing goes live; ask Lodgist on WhatsApp.",
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         lineHeight = 16.sp
@@ -433,6 +447,7 @@ fun ListPropertyScreen(
                     Spacer(modifier = Modifier.height(20.dp))
 
                     if (isSubmittedSuccess) {
+                        val context = LocalContext.current
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -444,18 +459,38 @@ fun ListPropertyScreen(
                         ) {
                             Column(modifier = Modifier.padding(14.dp)) {
                                 Text(
-                                    text = "Lead Submitted Successfully",
+                                    text = SAVED_LOCALLY_COPY,
+                                    modifier = Modifier.semantics {
+                                        heading()
+                                        liveRegion = LiveRegionMode.Polite
+                                    },
                                     fontWeight = FontWeight.Bold,
-                                    color = LodgistTeal,
+                                    color = accessibleTeal(),
                                     fontSize = 14.sp
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
-                                    text = "Our Owerri field inspector will review your property details. Note: A submitted lead is not yet a published home. For quick assistance, contact WhatsApp +2349136094315.",
+                                    text = "Lodgist hasn't received this lead yet. Send it on WhatsApp so Lodgist staff can review it. A saved lead is not a published home.",
                                     fontSize = 12.sp,
                                     color = MaterialTheme.colorScheme.onSurface,
                                     lineHeight = 16.sp
                                 )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Button(
+                                    onClick = {
+                                        openWhatsAppSupport(
+                                            context,
+                                            leadWhatsAppMessage(title, selectedType, neighborhood, selectedCity, annualRentText.toLongOrNull() ?: 0L, null)
+                                        )
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .heightIn(min = 48.dp)
+                                        .testTag("send_lead_whatsapp_btn"),
+                                    colors = ButtonDefaults.buttonColors(containerColor = LodgistOrangeButton, contentColor = Color.White)
+                                ) {
+                                    Text("Send via WhatsApp", fontWeight = FontWeight.Bold)
+                                }
                             }
                         }
                         Spacer(modifier = Modifier.height(10.dp))
@@ -495,10 +530,10 @@ fun ListPropertyScreen(
                         enabled = !isSubmittedSuccess,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(50.dp)
+                            .heightIn(min = 50.dp)
                             .testTag("submit_landlord_listing_btn"),
                         shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = LodgistOrange)
+                        colors = ButtonDefaults.buttonColors(containerColor = LodgistOrangeButton, contentColor = Color.White)
                     ) {
                         Icon(
                             imageVector = Icons.Default.CheckCircle,
@@ -507,7 +542,7 @@ fun ListPropertyScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Submit for TruthScore Audit",
+                            text = "Save lead on this phone",
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -520,7 +555,8 @@ fun ListPropertyScreen(
         if (submissions.isNotEmpty()) {
             item {
                 Text(
-                    text = "My Submitted Properties (${submissions.size})",
+                    text = "My Saved Listing Leads (${submissions.size})",
+                    modifier = Modifier.semantics { heading() },
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -552,21 +588,21 @@ fun ListPropertyScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(6.dp))
-                                    .background(LodgistOrange.copy(alpha = 0.15f))
+                                    .background(accessibleOrange().copy(alpha = 0.15f))
                                     .padding(horizontal = 8.dp, vertical = 3.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.HourglassTop,
                                     contentDescription = null,
-                                    tint = LodgistOrange,
+                                    tint = accessibleOrange(),
                                     modifier = Modifier.size(12.dp)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    text = "Audit In Progress",
-                                    fontSize = 10.sp,
+                                    text = "Saved on this phone",
+                                    fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = LodgistOrange
+                                    color = accessibleOrange()
                                 )
                             }
                         }
@@ -585,8 +621,21 @@ fun ListPropertyScreen(
                             text = "Listed Rent: ${formatNaira(item.annualRent)}/yr",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = LodgistOrange
+                            color = accessibleOrange()
                         )
+
+                        val itemContext = LocalContext.current
+                        TextButton(
+                            onClick = {
+                                openWhatsAppSupport(
+                                    itemContext,
+                                    leadWhatsAppMessage(item.title, item.propertyType, item.neighborhood, item.city, item.annualRent, LodgistViewModel.leadRef(item.id))
+                                )
+                            },
+                            modifier = Modifier.heightIn(min = 48.dp)
+                        ) {
+                            Text("Send via WhatsApp to submit (${LodgistViewModel.leadRef(item.id)})", color = accessibleTeal())
+                        }
                     }
                 }
             }
@@ -619,3 +668,20 @@ private fun CheckItem(
         )
     }
 }
+
+/** Prefilled WhatsApp text for a locally saved listing lead. User text is sanitized; no payment details. */
+internal fun leadWhatsAppMessage(
+    title: String,
+    propertyType: String,
+    neighborhood: String,
+    city: String,
+    annualRent: Long,
+    leadRef: String?
+): String =
+    "Hello Lodgist, I would like to submit a listing lead for staff review.\n" +
+        "Listing: ${sanitizeForWhatsApp(title)}\n" +
+        "Type: ${sanitizeForWhatsApp(propertyType, 40)}\n" +
+        "Area: ${sanitizeForWhatsApp("$neighborhood, $city")}\n" +
+        "Annual rent: ${formatNaira(annualRent)}\n" +
+        (if (leadRef != null) "Lead reference: $leadRef\n" else "") +
+        "I understand a lead is not a published or verified listing."

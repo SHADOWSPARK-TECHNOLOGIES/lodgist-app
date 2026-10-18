@@ -9,6 +9,7 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
 
 private val LodgistDarkColorScheme = darkColorScheme(
@@ -81,3 +82,18 @@ fun MyApplicationTheme(
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) = LodgistTheme(darkTheme = darkTheme, dynamicColor = dynamicColor, content = content)
+
+@Composable
+private fun isLightSurface(): Boolean = MaterialTheme.colorScheme.surface.luminance() > 0.5f
+
+/** Teal for small text/chips: >= 4.5:1 in light and dark themes. */
+@Composable
+fun accessibleTeal(): Color = if (isLightSurface()) LodgistTealTextOnLight else LodgistTeal
+
+/** Orange for small text: >= 4.5:1 in light and dark themes. */
+@Composable
+fun accessibleOrange(): Color = if (isLightSurface()) LodgistOrangeTextOnLight else LodgistOrange
+
+/** Neutral grey for "Sample" / "Not yet verified" badges: >= 4.5:1 in light and dark themes. */
+@Composable
+fun accessibleGrey(): Color = if (isLightSurface()) LodgistGreyTextOnLight else LodgistGreyTextOnDark

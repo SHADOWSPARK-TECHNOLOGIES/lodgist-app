@@ -4,7 +4,6 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import androidx.room.Update
 import com.example.data.model.InspectionBookingEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -19,8 +18,7 @@ interface InspectionDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertBooking(booking: InspectionBookingEntity): Long
 
-    @Update
-    suspend fun updateBooking(booking: InspectionBookingEntity)
+    // No generic update/status writer on purpose (LM-01): only Lodgist staff/server may confirm a visit.
 
     @Query("DELETE FROM inspection_bookings WHERE id = :bookingId")
     suspend fun cancelBooking(bookingId: Long)

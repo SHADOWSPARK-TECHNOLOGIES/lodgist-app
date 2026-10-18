@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -53,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.PropertyEntity
 import com.example.ui.theme.LodgistOrange
+import com.example.ui.theme.LodgistOrangeButton
 import com.example.ui.theme.LodgistTeal
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -139,14 +141,14 @@ fun InspectionBookingSheet(
                 verticalAlignment = Alignment.Top
             ) {
                 Icon(
-                    imageVector = Icons.Default.Shield,
-                    contentDescription = "Safety",
+                    imageVector = Icons.Default.Info,
+                    contentDescription = null,
                     tint = LodgistTeal,
                     modifier = Modifier.size(20.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Lodgist Rule: Always inspect the physical house before paying any rent or deposit. A verified field officer will accompany you.",
+                    text = "Lodgist Rule: Always inspect the physical house before paying any rent or deposit. Your request is saved on this phone; send it to Lodgist on WhatsApp so staff can confirm a visit.",
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurface,
                     lineHeight = 16.sp
@@ -308,10 +310,10 @@ fun InspectionBookingSheet(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(52.dp)
+                    .heightIn(min = 52.dp)
                     .testTag("confirm_inspection_booking_btn"),
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = LodgistOrange)
+                colors = ButtonDefaults.buttonColors(containerColor = LodgistOrangeButton, contentColor = Color.White)
             ) {
                 Icon(
                     imageVector = Icons.Default.CheckCircle,
@@ -320,7 +322,7 @@ fun InspectionBookingSheet(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Confirm Inspection Booking",
+                    text = "Save inspection request",
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold
                 )
