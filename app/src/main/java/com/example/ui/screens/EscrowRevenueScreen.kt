@@ -37,9 +37,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -54,6 +52,7 @@ import com.example.ui.components.formatNaira
 import com.example.ui.components.openWhatsAppSupport
 import com.example.ui.components.paymentPurposeLabel
 import com.example.ui.components.paymentStatusLabel
+import com.example.ui.components.displayPayerName
 import com.example.ui.components.sanitizeForWhatsApp
 import com.example.ui.theme.accessibleGrey
 import com.example.ui.theme.accessibleOrange
@@ -257,7 +256,7 @@ fun EscrowRevenueScreen(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "When you request an inspection or rent payment, the request appears here while it awaits Lodgist staff confirmation.",
+                            text = "Payment requests you confirm sending on WhatsApp appear here while they await Lodgist staff confirmation. Inspection and listing leads are not payments and are not shown here.",
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             lineHeight = 15.sp
@@ -301,7 +300,6 @@ fun EscrowRevenueScreen(
                                 // Display label only: legacy escrow statuses show "Status unknown" (stored value untouched).
                                 Text(
                                     text = paymentStatusLabel(item.status),
-                                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = accessibleTeal()
@@ -325,7 +323,7 @@ fun EscrowRevenueScreen(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                text = "Ref: ${item.transactionRef} • ${item.payerName}",
+                                text = "Ref: ${item.transactionRef} • ${displayPayerName(item.payerName)}",
                                 fontSize = 11.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -386,8 +384,7 @@ private fun MetricCard(
                 Text(
                     text = label,
                     fontSize = 10.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             Spacer(modifier = Modifier.height(6.dp))

@@ -480,7 +480,7 @@ fun ListPropertyScreen(
                                     onClick = {
                                         openWhatsAppSupport(
                                             context,
-                                            leadWhatsAppMessage(title, selectedType, neighborhood, selectedCity, annualRentText.toLongOrNull() ?: 0L, null)
+                                            leadWhatsAppMessage(title, selectedType, neighborhood, selectedCity, annualRentText.toLongOrNull() ?: 0L, submissions.maxByOrNull { it.id }?.let { LodgistViewModel.leadRef(it.id) })
                                         )
                                     },
                                     modifier = Modifier

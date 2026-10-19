@@ -178,7 +178,7 @@ fun PaymentCheckoutSheet(
                     amountNaira = amountNaira,
                     payerName = payerName,
                     requestRef = ref,
-                    onOpenAgain = { openWhatsApp() },
+                    onOpenAgain = { openWhatsAppSupport(context, "Hello Lodgist, I have a question about my request. Request reference: ${sanitizeForWhatsApp(ref, 32)}") },
                     onDismiss = onDismiss
                 )
             }
