@@ -37,12 +37,19 @@ fun hasAuditData(property: PropertyEntity): Boolean = property.truthScore > 0
  */
 fun sanitizeForWhatsApp(text: String, maxLength: Int = 80): String {
     val cleaned = buildString {
-        for (ch in text) {
-            append(if (ch.isISOControl() || ch == '\u2028' || ch == '\u2029' || Character.getType(ch) == Character.FORMAT.toInt()) ' ' else ch)
+        text.codePoints().forEach { cp ->
+            val unsafe = Character.isISOControl(cp) || cp == 0x2028 || cp == 0x2029 ||
+                Character.getType(cp) == Character.FORMAT.toInt()
+            if (unsafe) append(' ') else appendCodePoint(cp)
         }
     }.replace(Regex("\\s+"), " ").trim()
-    return if (cleaned.length <= maxLength) cleaned else cleaned.take(maxLength - 1).trimEnd() + "…"
+    if (cleaned.codePointCount(0, cleaned.length) <= maxLength) return cleaned
+    val end = cleaned.offsetByCodePoints(0, maxLength - 1)
+    return cleaned.substring(0, end).trimEnd() + "…"
 }
+
+/** Display only: drops a legacy unbacked "Verified" prefix from stored payer names. */
+fun displayPayerName(name: String): String = name.replaceFirst(Regex("^\\s*Verified\\s+", RegexOption.IGNORE_CASE), "")
 
 /** Random, non-sequential local reference. Not proof of payment; staff confirm on WhatsApp. */
 fun newRequestRef(prefix: String = "LDG-REQ"): String =

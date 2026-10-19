@@ -67,6 +67,8 @@ fun openWhatsAppSupport(
                 context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://lodgist.online")))
             } catch (_: ActivityNotFoundException) {
                 // No browser either: nothing to open.
+            } catch (_: SecurityException) {
+                // Browser refused the intent: nothing to open.
             }
         }
         false
