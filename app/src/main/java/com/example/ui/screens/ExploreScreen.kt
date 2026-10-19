@@ -327,34 +327,6 @@ fun ExploreScreen(
                             )
                         )
 
-                        // TruthScore 90%+ Toggle
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Column {
-                                Text(
-                                    text = "Only 90%+ TruthScore™",
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    text = "Based on listing details; ask Lodgist staff what was checked",
-                                    fontSize = 10.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-
-                            Switch(
-                                checked = filterState.onlyHighTruthScore,
-                                onCheckedChange = { onToggleHighTruthScore() },
-                                colors = SwitchDefaults.colors(
-                                    checkedThumbColor = LodgistOrange,
-                                    checkedTrackColor = LodgistOrange.copy(alpha = 0.35f)
-                                )
-                            )
-                        }
 
                         Spacer(modifier = Modifier.height(10.dp))
 

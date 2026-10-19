@@ -68,6 +68,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.data.model.PropertyEntity
+import com.example.ui.components.sanitizeForWhatsApp
 import com.example.ui.components.SpatialLabNeighborhoodCard
 import com.example.ui.components.TruthScoreAuditCard
 import com.example.ui.components.TruthScoreCircle
@@ -535,7 +536,7 @@ fun PropertyDetailScreen(
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
-                                    text = if (property.verificationStatus == "VERIFIED") "Owner checked by Lodgist" else "Owner not yet verified by Lodgist",
+                                    text = "Owner not yet verified by Lodgist",
                                     fontSize = 11.sp,
                                     color = LodgistTeal,
                                     fontWeight = FontWeight.Medium
@@ -572,7 +573,7 @@ fun PropertyDetailScreen(
                                 onClick = {
                                     openWhatsAppSupport(
                                         context,
-                                        "Hello Lodgist, I am interested in inspecting the property: ${property.title} in ${property.neighborhood}, ${property.city} (ID: ${property.id})."
+                                        "Hello Lodgist, I am interested in inspecting the property: ${sanitizeForWhatsApp(property.title)} in ${sanitizeForWhatsApp(property.neighborhood, 40)}, ${sanitizeForWhatsApp(property.city, 40)} (ID: ${sanitizeForWhatsApp(property.id, 64)})."
                                     )
                                 },
                                 modifier = Modifier.weight(1f),
