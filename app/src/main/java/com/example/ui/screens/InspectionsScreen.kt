@@ -127,7 +127,7 @@ fun InspectionsScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "My Scheduled Inspections (${bookings.size})",
+                    text = "My inspection requests (${bookings.size})",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface

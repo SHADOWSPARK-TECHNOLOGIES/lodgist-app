@@ -223,8 +223,7 @@ fun SearchPropertyContent(
             (categoryFilter.isNotBlank() && !categoryFilter.equals("All", ignoreCase = true)) ||
             minPrice > 0L ||
             maxPrice < 10000000L ||
-            roomsFilter > 0 ||
-            verifiedOnly
+            roomsFilter > 0
 
     LazyColumn(
         modifier = modifier
@@ -690,12 +689,6 @@ fun SearchPropertyContent(
                             )
                         }
 
-                        if (verifiedOnly) {
-                            ActiveFilterBadge(
-                                text = "Verified Only",
-                                onClear = onToggleVerifiedOnly
-                            )
-                        }
                     }
                 }
             }
