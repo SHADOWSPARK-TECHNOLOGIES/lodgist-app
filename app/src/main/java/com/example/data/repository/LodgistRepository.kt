@@ -70,9 +70,9 @@ class LodgistRepository(
         }
     }
 
-    suspend fun releaseEscrow(paymentId: Long) {
-        withContext(Dispatchers.IO) {
-            escrowDao.updateStatus(paymentId, "RELEASED_TO_LANDLORD")
+    suspend fun hasPaymentWithRef(ref: String): Boolean {
+        return withContext(Dispatchers.IO) {
+            escrowDao.countByRef(ref) > 0
         }
     }
 
@@ -81,6 +81,10 @@ class LodgistRepository(
             val count = propertyDao.getPropertyCount()
             if (count == 0) {
                 LodgistDatabase.populateInitialData(propertyDao)
+            } else {
+                // Older installs seeded these sample rows as VERIFIED. Relabel them in place
+                // (favourites and other columns are preserved). Sample data is never verified.
+                propertyDao.markAsSample(LodgistDatabase.SAMPLE_PROPERTY_IDS)
             }
         }
     }

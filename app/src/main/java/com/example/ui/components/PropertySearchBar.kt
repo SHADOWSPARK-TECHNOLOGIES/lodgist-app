@@ -125,7 +125,7 @@ fun PropertySearchBar(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Quick Filter Chips (Locations & Verified Toggle)
+            // Quick Filter Chips (Locations). Verified-only chip hidden until real verification data exists (LM-03).
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -133,31 +133,6 @@ fun PropertySearchBar(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Verified-only chip
-                FilterChip(
-                    selected = verifiedOnly,
-                    onClick = onToggleVerified,
-                    label = {
-                        Text(
-                            text = "Verified Only",
-                            fontSize = 12.sp,
-                            fontWeight = if (verifiedOnly) FontWeight.Bold else FontWeight.Normal
-                        )
-                    },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.VerifiedUser,
-                            contentDescription = null,
-                            tint = if (verifiedOnly) LodgistTeal else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = LodgistTeal.copy(alpha = 0.18f),
-                        selectedLabelColor = LodgistTeal
-                    ),
-                    modifier = Modifier.testTag("filter_chip_verified")
-                )
 
                 // Location Chips
                 quickLocations.forEach { loc ->

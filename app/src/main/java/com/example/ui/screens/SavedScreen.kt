@@ -26,6 +26,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -57,7 +59,8 @@ fun SavedScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Saved Verified Homes (${savedProperties.size})",
+                    text = "Saved homes (${savedProperties.size})",
+                    modifier = Modifier.semantics { heading() },
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -108,7 +111,7 @@ fun SavedScreen(
                             shape = RoundedCornerShape(10.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = LodgistOrange)
                         ) {
-                            Text("Explore Verified Homes")
+                            Text("Browse homes")
                         }
                     }
                 }

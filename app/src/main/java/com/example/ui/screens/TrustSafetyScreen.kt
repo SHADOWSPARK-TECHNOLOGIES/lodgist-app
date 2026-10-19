@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -112,7 +113,7 @@ fun TrustSafetyScreen(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Every year, thousands of Nigerians lose hard-earned rent to fake caretaker syndicates, duplicate key scams, demolished buildings, and phantom 'agency fees'. Lodgist was built to eliminate this.",
+                        text = "Every year, thousands of Nigerians lose hard-earned rent to fake caretaker syndicates, duplicate key scams, demolished buildings, and phantom 'agency fees'. Lodgist aims to reduce this by checking listings before you pay.",
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         lineHeight = 17.sp
@@ -124,7 +125,7 @@ fun TrustSafetyScreen(
         // The 5 Pillars of TruthScore
         item {
             Text(
-                text = "The 5 Pillars of TruthScore™",
+                text = "What a TruthScore™ audit can cover",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
@@ -135,7 +136,7 @@ fun TrustSafetyScreen(
             PillarCard(
                 pillarNumber = "1",
                 title = "Title & Legal Documentation",
-                description = "Our legal audit verifies Registered Deed of Conveyance, Governor's Consent, or authentic Family Allocation to ensure the lister has lawful authority to lease.",
+                description = "Where a listing has been audited, Lodgist staff can review the Deed of Conveyance, Governor's Consent or Family Allocation to check the lister's authority to lease. Ask Lodgist what was checked for a listing.",
                 icon = Icons.Default.AssignmentTurnedIn
             )
         }
@@ -144,7 +145,7 @@ fun TrustSafetyScreen(
             PillarCard(
                 pillarNumber = "2",
                 title = "Landlord NIN & Identity Match",
-                description = "We match government identity (NIN/BVN) with the property title. If an agent lists on behalf of a landlord, an official Power of Attorney is physically reviewed.",
+                description = "Lodgist staff can check government identity (NIN/BVN) against the property title, and a Power of Attorney when an agent lists for a landlord. Only listings showing a check result have had it.",
                 icon = Icons.Default.AccountCircle
             )
         }
@@ -153,7 +154,7 @@ fun TrustSafetyScreen(
             PillarCard(
                 pillarNumber = "3",
                 title = "Fair Neighborhood Price Index",
-                description = "We check every rental rate against nearby verified properties in the same neighborhood (Owerri, Lagos, Port Harcourt, Abuja) to prevent extortionate markups.",
+                description = "On request, Lodgist staff can compare a rent against similar nearby listings to flag possible markups.",
                 icon = Icons.Default.PriceCheck
             )
         }
@@ -162,7 +163,7 @@ fun TrustSafetyScreen(
             PillarCard(
                 pillarNumber = "4",
                 title = "Litigation & Demolition Free",
-                description = "We cross-reference state urban planning databases to ensure the property is free of ongoing family inheritance court disputes and government demolition markings.",
+                description = "On request, Lodgist staff can look for known court disputes or demolition notices. This is a check only and it can miss things.",
                 icon = Icons.Default.Gavel
             )
         }
@@ -171,7 +172,7 @@ fun TrustSafetyScreen(
             PillarCard(
                 pillarNumber = "5",
                 title = "Physical On-Site Engineering Audit",
-                description = "A Lodgist field officer physically tests the borehole water pump, verifies prepaid electricity meter serials, checks rainy-season flood elevation, and inspects structural soundness.",
+                description = "A Lodgist field visit can check the water supply, prepaid meter, flood risk and visible structure. Ask Lodgist on WhatsApp to arrange one.",
                 icon = Icons.Default.LocationCity
             )
         }
@@ -206,7 +207,7 @@ fun TrustSafetyScreen(
                     Spacer(modifier = Modifier.height(6.dp))
 
                     Text(
-                        text = "1. Never pay rent before a physical walkthrough.\n2. Always verify that water runs from the taps and the prepaid meter is functional.\n3. Report any suspicious demands to the Lodgist Security Desk immediately.",
+                        text = "1. Never pay rent before a physical walkthrough.\n2. Always verify that water runs from the taps and the prepaid meter is functional.\n3. Pay only to the details Lodgist staff send you on WhatsApp, and report any suspicious demands to Lodgist.",
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurface,
                         lineHeight = 18.sp
@@ -226,7 +227,7 @@ fun TrustSafetyScreen(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(50.dp)
+                    .heightIn(min = 50.dp)
                     .testTag("trust_whatsapp_support_btn"),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = LodgistTeal)

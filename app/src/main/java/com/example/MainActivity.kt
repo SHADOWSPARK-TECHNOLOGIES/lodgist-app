@@ -16,6 +16,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -68,7 +69,9 @@ fun LodgistApp(viewModel: LodgistViewModel) {
 
     val snackbarHostState = remember { SnackbarHostState() }
     var propertyForBooking by remember { mutableStateOf<PropertyEntity?>(null) }
-    var propertyForEscrowPayment by remember { mutableStateOf<PropertyEntity?>(null) }
+    // Saved across rotation/process death so the pending WhatsApp handoff isn't lost.
+    var paymentPropertyId by rememberSaveable { mutableStateOf<String?>(null) }
+    val allProperties by viewModel.allProperties.collectAsStateWithLifecycle()
 
     LaunchedEffect(userMessage) {
         userMessage?.let { msg ->
@@ -87,17 +90,17 @@ fun LodgistApp(viewModel: LodgistViewModel) {
                         ScreenDestination.SEARCH_PROPERTIES -> "Search Properties"
                         ScreenDestination.INSPECTIONS -> "My Inspections"
                         ScreenDestination.SAVED -> "Saved Properties"
-                        ScreenDestination.ESCROW_VAULT -> "Escrow Vault"
+                        ScreenDestination.ESCROW_VAULT -> "Payment Requests"
                         ScreenDestination.TRUST_SAFETY -> "Trust & Safety"
                         ScreenDestination.LIST_PROPERTY -> "List Property"
                         ScreenDestination.PROPERTY_DETAIL -> "Property Details"
                     },
                     subtitle = when (currentScreen) {
-                        ScreenDestination.EXPLORE -> "Verified Nigeria Rentals"
+                        ScreenDestination.EXPLORE -> "Nigeria Rentals"
                         ScreenDestination.SEARCH_PROPERTIES -> "Filter Houses & Flats"
                         ScreenDestination.INSPECTIONS -> "Field Walkthroughs"
                         ScreenDestination.SAVED -> "Bookmarked Homes"
-                        ScreenDestination.ESCROW_VAULT -> "Insured Rent Protection"
+                        ScreenDestination.ESCROW_VAULT -> "Awaiting Lodgist staff confirmation"
                         ScreenDestination.TRUST_SAFETY -> "TruthScore™ Audit System"
                         ScreenDestination.LIST_PROPERTY -> "Landlord & Owner Portal"
                         ScreenDestination.PROPERTY_DETAIL -> ""
@@ -176,7 +179,7 @@ fun LodgistApp(viewModel: LodgistViewModel) {
                         onBack = { viewModel.clearSelectedProperty() },
                         onToggleFavorite = { viewModel.toggleFavorite(it) },
                         onBookInspection = { propertyForBooking = it },
-                        onPayEscrow = { propertyForEscrowPayment = it }
+                        onPayEscrow = { paymentPropertyId = it.id }
                     )
                 } ?: run {
                     viewModel.clearSelectedProperty()
@@ -208,7 +211,6 @@ fun LodgistApp(viewModel: LodgistViewModel) {
                     payments = escrowPayments,
                     totalEscrow = totalEscrow,
                     totalRevenue = totalRevenue,
-                    onReleaseEscrow = { viewModel.releaseEscrowToLandlord(it) },
                     modifier = Modifier.padding(innerPadding)
                 )
             }
@@ -264,26 +266,30 @@ fun LodgistApp(viewModel: LodgistViewModel) {
             )
         }
 
-        // Annual Rent Escrow Payment Bottom Sheet
-        propertyForEscrowPayment?.let { prop ->
+        // Rent payment request bottom sheet (WhatsApp handoff, staff confirm manually)
+        paymentPropertyId?.let { id -> allProperties.find { it.id == id } }?.let { prop ->
+            val existingRequest = viewModel.existingRentRequest(prop.id)
             PaymentCheckoutSheet(
-                title = "Annual Rent Escrow Protection",
+                title = "Annual rent and move-in costs",
                 subtitle = prop.title,
                 amountNaira = prop.totalMoveInCost,
                 purpose = "ANNUAL_RENT_ESCROW",
                 propertyId = prop.id,
-                payerName = "Verified Tenant",
-                payerPhone = "08012345678",
-                onDismiss = { propertyForEscrowPayment = null },
-                onPaymentSuccess = { method, ref ->
+                payerName = "",
+                payerPhone = "",
+                // Reuse the recorded/draft reference on reopen instead of creating a duplicate.
+                requestRef = existingRequest?.transactionRef ?: viewModel.rentRequestRefFor(prop.id),
+                alreadySent = existingRequest != null,
+                onDismiss = { paymentPropertyId = null },
+                onRequestSent = { method, ref ->
+                    // Called only after the user confirms "I sent the message". Records a pending request.
                     viewModel.payRentIntoEscrow(
                         property = prop,
-                        tenantName = "Verified Tenant",
-                        tenantPhone = "08012345678",
+                        tenantName = "Not provided",
+                        tenantPhone = "",
                         method = method,
                         ref = ref
                     )
-                    propertyForEscrowPayment = null
                 }
             )
         }

@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -95,7 +96,11 @@ fun PropertyCard(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    TruthScorePill(score = property.truthScore)
+                    if (hasAuditData(property)) {
+                        TruthScorePill(score = property.truthScore)
+                    } else {
+                        Spacer(modifier = Modifier.width(1.dp))
+                    }
 
                     IconButton(
                         onClick = onToggleFavorite,
@@ -120,7 +125,7 @@ fun PropertyCard(
                         .align(Alignment.BottomStart)
                         .padding(12.dp)
                 ) {
-                    VerifiedBadge(isVerified = property.verificationStatus == "VERIFIED")
+                    VerifiedBadge(verificationStatus = property.verificationStatus)
                 }
             }
 
@@ -255,22 +260,29 @@ fun PropertyCard(
                             text = formatNaira(property.annualRent),
                             fontSize = 18.sp,
                             fontWeight = FontWeight.ExtraBold,
-                            color = LodgistOrange
+                            color = com.example.ui.theme.accessibleOrange()
                         )
                         Text(
-                            text = "per annum (no hidden fees)",
+                            text = "per annum",
                             fontSize = 10.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
 
+                    // Samples and unverified listings are not bookable (product call (a)).
+                    val isBookable = isBookableOrPayable(property.verificationStatus)
                     OutlinedButton(
                         onClick = onBookInspection,
-                        modifier = Modifier.testTag("book_inspection_btn_${property.id}"),
+                        enabled = isBookable,
+                        modifier = Modifier
+                            .heightIn(min = 48.dp)
+                            .testTag("book_inspection_btn_${property.id}"),
                         shape = RoundedCornerShape(8.dp)
                     ) {
                         Text(
-                            text = "Inspect",
+                            text = if (isBookable) "Inspect"
+                            else if (property.verificationStatus == "SAMPLE") "Sample, not bookable"
+                            else "Not yet verified",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold
                         )

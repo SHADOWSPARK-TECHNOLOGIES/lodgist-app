@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -93,28 +94,39 @@ fun TruthScoreCircle(
 @Composable
 fun VerifiedBadge(
     modifier: Modifier = Modifier,
-    isVerified: Boolean = true
+    verificationStatus: String
 ) {
+    // "Verified" renders only from API-backed status ("VERIFIED"). Seeded rows are "SAMPLE".
+    val isVerified = verificationStatus == "VERIFIED"
+    // >= 4.5:1 on the opaque surface background (also when the badge sits on a photo).
+    val badgeColor = if (isVerified) com.example.ui.theme.accessibleTeal() else com.example.ui.theme.accessibleGrey()
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .clip(RoundedCornerShape(8.dp))
-            .background(Color(0xFF1ABC9C).copy(alpha = 0.15f))
-            .border(1.dp, Color(0xFF1ABC9C).copy(alpha = 0.35f), RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .border(1.dp, badgeColor.copy(alpha = 0.35f), RoundedCornerShape(8.dp))
             .padding(horizontal = 8.dp, vertical = 4.dp)
     ) {
         Icon(
-            imageVector = Icons.Default.CheckCircle,
-            contentDescription = "Verified by Lodgist",
-            tint = Color(0xFF1ABC9C),
+            imageVector = if (isVerified) Icons.Default.CheckCircle else Icons.Default.Info,
+            contentDescription = null,
+            tint = badgeColor,
             modifier = Modifier.size(13.dp)
         )
         Spacer(modifier = Modifier.width(4.dp))
         Text(
-            text = if (isVerified) "Verified by Lodgist" else "Review Pending",
-            color = Color(0xFF1ABC9C),
+            text = verificationBadgeLabel(verificationStatus),
+            color = badgeColor,
             fontSize = 11.sp,
             fontWeight = FontWeight.SemiBold
         )
     }
+}
+
+/** Badge copy. Only API-backed "VERIFIED" may say verified; seeded "SAMPLE" rows say Sample. */
+fun verificationBadgeLabel(verificationStatus: String): String = when (verificationStatus) {
+    "VERIFIED" -> "Verified by Lodgist"
+    "SAMPLE" -> "Sample listing"
+    else -> "Not yet verified"
 }

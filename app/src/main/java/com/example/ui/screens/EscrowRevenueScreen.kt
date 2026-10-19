@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -22,30 +23,40 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Key
-import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.HourglassTop
 import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.ReceiptLong
-import androidx.compose.material.icons.filled.Shield
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.EscrowPaymentEntity
+import com.example.ui.components.REFUND_COPY
 import com.example.ui.components.formatNaira
+import com.example.ui.components.openWhatsAppSupport
+import com.example.ui.components.paymentPurposeLabel
+import com.example.ui.components.paymentStatusLabel
+import com.example.ui.components.displayPayerName
+import com.example.ui.components.sanitizeForWhatsApp
+import com.example.ui.theme.accessibleGrey
+import com.example.ui.theme.accessibleOrange
+import com.example.ui.theme.accessibleTeal
 import com.example.ui.theme.LodgistOrange
 import com.example.ui.theme.LodgistTeal
 import com.example.ui.theme.TruthScoreGreen
@@ -55,7 +66,6 @@ fun EscrowRevenueScreen(
     payments: List<EscrowPaymentEntity>,
     totalEscrow: Long,
     totalRevenue: Long,
-    onReleaseEscrow: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -98,15 +108,16 @@ fun EscrowRevenueScreen(
                             Spacer(modifier = Modifier.width(10.dp))
                             Column {
                                 Text(
-                                    text = "Lodgist Escrow Vault",
+                                    text = "Lodgist Payment Requests",
+                                    modifier = Modifier.semantics { heading() },
                                     fontSize = 17.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
-                                    text = "Insured Tenant-Landlord Protection",
+                                    text = "Confirmed manually by Lodgist staff on WhatsApp",
                                     fontSize = 11.sp,
-                                    color = LodgistTeal,
+                                    color = accessibleTeal(),
                                     fontWeight = FontWeight.SemiBold
                                 )
                             }
@@ -116,21 +127,15 @@ fun EscrowRevenueScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
                                 .clip(RoundedCornerShape(6.dp))
-                                .background(TruthScoreGreen.copy(alpha = 0.15f))
+                                .background(accessibleGrey().copy(alpha = 0.15f))
                                 .padding(horizontal = 8.dp, vertical = 3.dp)
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Lock,
-                                contentDescription = null,
-                                tint = TruthScoreGreen,
-                                modifier = Modifier.size(12.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
+                            // Describes the process; no lock/shield because nothing here is secured or held.
                             Text(
-                                text = "Active Escrow",
-                                fontSize = 10.sp,
+                                text = "Manual confirmation",
+                                fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = TruthScoreGreen
+                                color = accessibleGrey()
                             )
                         }
                     }
@@ -143,18 +148,18 @@ fun EscrowRevenueScreen(
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         MetricCard(
-                            label = "Funds Held in Escrow",
+                            label = "Awaiting Staff Confirmation",
                             amount = formatNaira(totalEscrow),
-                            icon = Icons.Default.Lock,
-                            tint = LodgistTeal,
+                            icon = Icons.Default.HourglassTop,
+                            tint = accessibleTeal(),
                             modifier = Modifier.weight(1f)
                         )
 
                         MetricCard(
-                            label = "Platform Revenue",
+                            label = "Staff-Confirmed Fees",
                             amount = formatNaira(totalRevenue),
                             icon = Icons.Default.MonetizationOn,
-                            tint = LodgistOrange,
+                            tint = accessibleOrange(),
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -162,7 +167,7 @@ fun EscrowRevenueScreen(
             }
         }
 
-        // How Escrow Protects Revenue
+        // How manual payments work
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -177,7 +182,7 @@ fun EscrowRevenueScreen(
                     verticalAlignment = Alignment.Top
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Shield,
+                        imageVector = Icons.Default.Info,
                         contentDescription = null,
                         tint = LodgistTeal,
                         modifier = Modifier.size(22.dp)
@@ -185,14 +190,14 @@ fun EscrowRevenueScreen(
                     Spacer(modifier = Modifier.width(10.dp))
                     Column {
                         Text(
-                            text = "How Lodgist Generates & Protects Revenue",
+                            text = "How Lodgist payments work",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(modifier = Modifier.height(3.dp))
                         Text(
-                            text = "1. Renters pay ₦3,500 inspection tokens to reserve an escort.\n2. Landlords pay ₦15,000 for 24h express TruthScore drone audits.\n3. Annual rent stays locked until the tenant receives keys and moves in.",
+                            text = "1. Request payment details from Lodgist staff on WhatsApp.\n2. Pay only to the details Lodgist staff send you on WhatsApp. Your payment counts only once Lodgist staff confirm they received it.\n3. This screen doesn't update automatically; Lodgist staff confirm on WhatsApp.\n4. $REFUND_COPY",
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             lineHeight = 16.sp
@@ -210,7 +215,8 @@ fun EscrowRevenueScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Live Escrow Transactions (${payments.size})",
+                    text = "Payment Requests (${payments.size})",
+                    modifier = Modifier.semantics { heading() },
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -243,14 +249,14 @@ fun EscrowRevenueScreen(
                         )
                         Spacer(modifier = Modifier.height(10.dp))
                         Text(
-                            text = "No Escrow Transactions Yet",
+                            text = "No Payment Requests Yet",
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "When you book an inspection or pay rent via Lodgist, transaction receipts and escrow holding proofs appear here.",
+                            text = "Payment requests you confirm sending on WhatsApp appear here while they await Lodgist staff confirmation. Inspection and listing leads are not payments and are not shown here.",
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             lineHeight = 15.sp
@@ -276,10 +282,10 @@ fun EscrowRevenueScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = item.purpose.replace("_", " "),
+                                text = paymentPurposeLabel(item.purpose),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = LodgistOrange
+                                color = accessibleOrange()
                             )
 
                             Row(
@@ -287,16 +293,16 @@ fun EscrowRevenueScreen(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(6.dp))
                                     .background(
-                                        if (item.status == "HELD_IN_ESCROW") LodgistTeal.copy(alpha = 0.15f)
-                                        else TruthScoreGreen.copy(alpha = 0.15f)
+                                        accessibleTeal().copy(alpha = 0.15f)
                                     )
                                     .padding(horizontal = 7.dp, vertical = 2.dp)
                             ) {
+                                // Display label only: legacy escrow statuses show "Status unknown" (stored value untouched).
                                 Text(
-                                    text = item.status.replace("_", " "),
-                                    fontSize = 10.sp,
+                                    text = paymentStatusLabel(item.status),
+                                    fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (item.status == "HELD_IN_ESCROW") LodgistTeal else TruthScoreGreen
+                                    color = accessibleTeal()
                                 )
                             }
                         }
@@ -317,7 +323,7 @@ fun EscrowRevenueScreen(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                text = "Ref: ${item.transactionRef} • ${item.payerName}",
+                                text = "Ref: ${item.transactionRef} • ${displayPayerName(item.payerName)}",
                                 fontSize = 11.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -326,28 +332,24 @@ fun EscrowRevenueScreen(
                                 text = formatNaira(item.amount),
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.ExtraBold,
-                                color = LodgistOrange
+                                color = accessibleOrange()
                             )
                         }
 
-                        if (item.status == "HELD_IN_ESCROW" && item.purpose == "ANNUAL_RENT_ESCROW") {
-                            Spacer(modifier = Modifier.height(10.dp))
-                            Button(
-                                onClick = { onReleaseEscrow(item.id) },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(40.dp),
-                                shape = RoundedCornerShape(8.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = TruthScoreGreen)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Key,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(14.dp)
+                        // Release/refund of funds is handled only by Lodgist staff, never from the app.
+                        val rowContext = LocalContext.current
+                        TextButton(
+                            onClick = {
+                                openWhatsAppSupport(
+                                    rowContext,
+                                    "Hello Lodgist, I have a question about my request.\n" +
+                                        "Request reference: ${sanitizeForWhatsApp(item.transactionRef, 32)}\n" +
+                                        "Listing: ${sanitizeForWhatsApp(item.propertyTitle)}"
                                 )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("Keys Received — Release to Landlord", fontSize = 11.sp)
-                            }
+                            },
+                            modifier = Modifier.heightIn(min = 48.dp)
+                        ) {
+                            Text("Ask about this request on WhatsApp", color = accessibleTeal(), fontSize = 12.sp)
                         }
                     }
                 }
@@ -382,8 +384,7 @@ private fun MetricCard(
                 Text(
                     text = label,
                     fontSize = 10.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             Spacer(modifier = Modifier.height(6.dp))

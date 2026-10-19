@@ -56,6 +56,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -178,7 +180,7 @@ fun ExploreScreen(
                     Spacer(modifier = Modifier.height(4.dp))
 
                     Text(
-                        text = "Find a place in Nigeria you can actually trust.",
+                        text = "Find a place in Nigeria, and check before you pay.",
                         fontSize = 19.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color = Color.White,
@@ -188,7 +190,7 @@ fun ExploreScreen(
                     Spacer(modifier = Modifier.height(4.dp))
 
                     Text(
-                        text = "See what Lodgist checked before you pay. Verified landlords & zero fake agent fees.",
+                        text = "Pay only to the details Lodgist staff send you on WhatsApp. Your payment counts only once Lodgist staff confirm they received it.",
                         fontSize = 12.sp,
                         color = Color.White.copy(alpha = 0.85f),
                         lineHeight = 16.sp
@@ -325,34 +327,6 @@ fun ExploreScreen(
                             )
                         )
 
-                        // TruthScore 90%+ Toggle
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Column {
-                                Text(
-                                    text = "Only 90%+ TruthScore™",
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    text = "Verified title deed + physical inspection passed",
-                                    fontSize = 10.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-
-                            Switch(
-                                checked = filterState.onlyHighTruthScore,
-                                onCheckedChange = { onToggleHighTruthScore() },
-                                colors = SwitchDefaults.colors(
-                                    checkedThumbColor = LodgistOrange,
-                                    checkedTrackColor = LodgistOrange.copy(alpha = 0.35f)
-                                )
-                            )
-                        }
 
                         Spacer(modifier = Modifier.height(10.dp))
 
@@ -424,7 +398,8 @@ fun ExploreScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "${properties.size} Verified Places Found",
+                    text = "${properties.size} Places Found",
+                    modifier = Modifier.semantics { heading() },
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -482,7 +457,7 @@ fun ExploreScreen(
                         )
                         Spacer(modifier = Modifier.height(10.dp))
                         Text(
-                            text = "Owerri Campus Pilot (FUTO, IMSU, Nekede): If you have a verified rental to list or need enquiry assistance, reach our official field team.",
+                            text = "Owerri Campus Pilot (FUTO, IMSU, Nekede): If you have a rental to list or need enquiry assistance, reach our official field team.",
                             fontSize = 11.sp,
                             color = LodgistTeal,
                             fontWeight = FontWeight.SemiBold,

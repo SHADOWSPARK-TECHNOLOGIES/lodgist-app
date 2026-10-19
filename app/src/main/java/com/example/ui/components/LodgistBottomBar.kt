@@ -85,17 +85,17 @@ fun LodgistBottomBar(
             )
         )
 
-        // 3. Escrow Vault (Revenue & Safe Rent)
+        // 3. Payment requests (awaiting Lodgist staff confirmation)
         NavigationBarItem(
             selected = currentDestination == ScreenDestination.ESCROW_VAULT,
             onClick = { onNavigate(ScreenDestination.ESCROW_VAULT) },
             icon = {
                 Icon(
                     imageVector = if (currentDestination == ScreenDestination.ESCROW_VAULT) Icons.Filled.AccountBalanceWallet else Icons.Outlined.AccountBalanceWallet,
-                    contentDescription = "Escrow Vault"
+                    contentDescription = "Payment requests"
                 )
             },
-            label = { Text("Escrow", fontSize = 11.sp) },
+            label = { Text("Payments", fontSize = 11.sp) },
             modifier = Modifier.testTag("nav_item_escrow"),
             colors = NavigationBarItemDefaults.colors(
                 selectedIconColor = LodgistOrange,

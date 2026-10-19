@@ -1,6 +1,6 @@
 {
   "name": "Lodgist",
-  "description": "Find verified houses and flats in Nigeria. See what Lodgist checked before you pay. Verified landlords, transparent pricing, and inspection bookings.",
+  "description": "Find houses and flats in Nigeria. Request inspections and payment details from Lodgist staff on WhatsApp; staff confirm everything manually.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

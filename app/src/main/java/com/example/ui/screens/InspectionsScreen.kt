@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -19,6 +20,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.HourglassTop
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.CheckCircle
@@ -40,6 +43,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -49,7 +54,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.InspectionBookingEntity
 import com.example.ui.components.openWhatsAppSupport
+import com.example.ui.components.inspectionAgentLabel
+import com.example.ui.components.inspectionStatusLabel
+import com.example.ui.components.sanitizeForWhatsApp
 import com.example.ui.theme.LodgistOrange
+import com.example.ui.theme.LodgistOrangeButton
+import com.example.ui.theme.accessibleTeal
+import com.example.ui.viewmodel.LodgistViewModel
 import com.example.ui.theme.LodgistTeal
 
 @Composable
@@ -68,7 +79,7 @@ fun InspectionsScreen(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Top Banner: Safety Guarantee
+        // Top Banner: Safety guidance
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -83,22 +94,22 @@ fun InspectionsScreen(
                     verticalAlignment = Alignment.Top
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Shield,
-                        contentDescription = "Safety First",
+                        imageVector = Icons.Default.Info,
+                        contentDescription = null,
                         tint = LodgistTeal,
                         modifier = Modifier.size(24.dp)
                     )
                     Spacer(modifier = Modifier.width(10.dp))
                     Column {
                         Text(
-                            text = "Physical Walkthrough Protection",
+                            text = "Inspect before you pay",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = "Never pay rent before your in-person visit. A Lodgist representative will be on-site to verify water running, power meter, and landlord credentials.",
+                            text = "Never pay rent before your in-person visit. Inspection requests are saved on this phone until you send them to Lodgist on WhatsApp; staff confirm visit times manually.",
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             lineHeight = 16.sp
@@ -116,7 +127,7 @@ fun InspectionsScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "My Scheduled Inspections (${bookings.size})",
+                    text = "My inspection requests (${bookings.size})",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -149,14 +160,15 @@ fun InspectionsScreen(
                         )
                         Spacer(modifier = Modifier.height(14.dp))
                         Text(
-                            text = "No Scheduled Inspections",
+                            text = "No Inspection Requests",
+                            modifier = Modifier.semantics { heading() },
                             fontSize = 17.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
-                            text = "Found a house you like? Book an in-person walkthrough with a verified Lodgist officer for free before paying any rent.",
+                            text = "Found a house you like? Request an in-person walkthrough and send it to Lodgist on WhatsApp before paying any rent.",
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             lineHeight = 16.sp
@@ -165,9 +177,9 @@ fun InspectionsScreen(
                         Button(
                             onClick = onExploreClick,
                             shape = RoundedCornerShape(10.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = LodgistOrange)
+                            colors = ButtonDefaults.buttonColors(containerColor = LodgistOrangeButton, contentColor = Color.White)
                         ) {
-                            Text("Browse Verified Homes")
+                            Text("Browse homes")
                         }
                     }
                 }
@@ -180,7 +192,12 @@ fun InspectionsScreen(
                     onContactSupport = {
                         openWhatsAppSupport(
                             context,
-                            "Hello Lodgist Support, I have an inspection booking (#${booking.id}) for '${booking.propertyTitle}' on ${booking.preferredDate} (${booking.preferredTimeSlot})."
+                            "Hello Lodgist, I would like to submit an inspection request.\n" +
+                                "Request reference: ${LodgistViewModel.inspectionRef(booking.id)}\n" +
+                                "Listing: ${sanitizeForWhatsApp(booking.propertyTitle)}\n" +
+                                "Listing reference: ${sanitizeForWhatsApp(booking.propertyId, 64)}\n" +
+                                "Preferred: ${sanitizeForWhatsApp(booking.preferredDate, 40)} (${sanitizeForWhatsApp(booking.preferredTimeSlot, 40)})\n" +
+                                "I understand nothing is booked until Lodgist staff confirm."
                         )
                     }
                 )
@@ -215,26 +232,28 @@ private fun InspectionCard(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .clip(RoundedCornerShape(6.dp))
-                        .background(LodgistTeal.copy(alpha = 0.15f))
+                        .background(accessibleTeal().copy(alpha = 0.15f))
                         .padding(horizontal = 8.dp, vertical = 3.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.CheckCircle,
+                        imageVector = Icons.Default.HourglassTop,
                         contentDescription = null,
-                        tint = LodgistTeal,
+                        tint = accessibleTeal(),
                         modifier = Modifier.size(13.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
+                    // Display label only; legacy CONFIRMED rows show "Status unknown" (stored value untouched).
                     Text(
-                        text = booking.status,
+                        text = inspectionStatusLabel(booking.status),
+                        modifier = Modifier.weight(1f, fill = false),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        color = LodgistTeal
+                        color = accessibleTeal()
                     )
                 }
 
                 Text(
-                    text = "Ref: #LODG-${booking.id}",
+                    text = "Ref: ${LodgistViewModel.inspectionRef(booking.id)}",
                     fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -311,7 +330,7 @@ private fun InspectionCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "Escort Officer: ${booking.assignedAgent}",
+                    text = "Lodgist staff: ${inspectionAgentLabel(booking.assignedAgent)}",
                     fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -338,31 +357,35 @@ private fun InspectionCard(
             ) {
                 OutlinedButton(
                     onClick = onCancel,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 48.dp),
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Cancel,
-                        contentDescription = "Cancel",
+                        contentDescription = null,
                         modifier = Modifier.size(14.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Cancel", fontSize = 12.sp)
+                    Text("Remove", fontSize = 12.sp)
                 }
 
                 Button(
                     onClick = onContactSupport,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 48.dp),
                     shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = LodgistTeal)
+                    colors = ButtonDefaults.buttonColors(containerColor = LodgistOrangeButton, contentColor = Color.White)
                 ) {
                     Icon(
                         imageVector = Icons.Default.SupportAgent,
-                        contentDescription = "WhatsApp",
+                        contentDescription = null,
                         modifier = Modifier.size(14.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Chat Support", fontSize = 12.sp)
+                    Text("Send via WhatsApp", fontSize = 12.sp)
                 }
             }
         }

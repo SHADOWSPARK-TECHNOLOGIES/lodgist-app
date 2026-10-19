@@ -223,8 +223,7 @@ fun SearchPropertyContent(
             (categoryFilter.isNotBlank() && !categoryFilter.equals("All", ignoreCase = true)) ||
             minPrice > 0L ||
             maxPrice < 10000000L ||
-            roomsFilter > 0 ||
-            verifiedOnly
+            roomsFilter > 0
 
     LazyColumn(
         modifier = modifier
@@ -600,49 +599,6 @@ fun SearchPropertyContent(
 
                         Spacer(modifier = Modifier.height(14.dp))
 
-                        // SECTION E: Verified Only Toggle
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                                .padding(horizontal = 12.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = Icons.Default.VerifiedUser,
-                                    contentDescription = null,
-                                    tint = LodgistTeal,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Column {
-                                    Text(
-                                        text = "Verified Listings Only",
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Text(
-                                        text = "Show homes with physical inspection passed",
-                                        fontSize = 10.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-
-                            Switch(
-                                checked = verifiedOnly,
-                                onCheckedChange = { onToggleVerifiedOnly() },
-                                colors = SwitchDefaults.colors(
-                                    checkedThumbColor = LodgistTeal,
-                                    checkedTrackColor = LodgistTeal.copy(alpha = 0.35f)
-                                ),
-                                modifier = Modifier.testTag("verified_only_filter_switch")
-                            )
-                        }
 
                         // Reset All Filters Button
                         if (hasActiveFilters) {
@@ -733,12 +689,6 @@ fun SearchPropertyContent(
                             )
                         }
 
-                        if (verifiedOnly) {
-                            ActiveFilterBadge(
-                                text = "Verified Only",
-                                onClear = onToggleVerifiedOnly
-                            )
-                        }
                     }
                 }
             }
@@ -851,7 +801,7 @@ private fun SearchEmptyState(
                 text = if (hasActiveFilters) {
                     "No houses or flats match your current location, room count, or price filter. Try broadening your criteria or resetting filters."
                 } else {
-                    "No listings available at this time. Check back soon for newly verified homes."
+                    "No listings available at this time. Check back soon for new homes."
                 },
                 fontSize = 13.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,

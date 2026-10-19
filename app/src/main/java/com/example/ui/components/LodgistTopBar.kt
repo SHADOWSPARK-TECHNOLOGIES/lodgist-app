@@ -1,5 +1,6 @@
 package com.example.ui.components
 
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -35,6 +36,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -42,15 +45,35 @@ import com.example.R
 import com.example.ui.theme.LodgistOrange
 import com.example.ui.theme.LodgistTeal
 
-fun openWhatsAppSupport(context: Context, customMessage: String? = null) {
-    val message = customMessage ?: "Hello Lodgist Support, I am browsing verified rentals on the Lodgist Android App and need assistance."
+/**
+ * Opens WhatsApp (wa.me/2349136094315) with a prefilled message.
+ * Returns true only if an app actually accepted the intent. Never throws.
+ * When [fallbackToWebsite] is true (general support), lodgist.online is tried if wa.me can't open;
+ * request flows pass false and show the number + reference in-app instead, so nothing is lost.
+ */
+fun openWhatsAppSupport(
+    context: Context,
+    customMessage: String? = null,
+    fallbackToWebsite: Boolean = true
+): Boolean {
+    val message = customMessage ?: "Hello Lodgist Support, I am browsing rentals on the Lodgist Android App and need assistance."
     val url = "https://wa.me/2349136094315?text=" + Uri.encode(message)
-    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-    try {
-        context.startActivity(intent)
-    } catch (_: Exception) {
-        val webIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://lodgist.online"))
-        context.startActivity(webIntent)
+    return try {
+        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        true
+    } catch (_: ActivityNotFoundException) {
+        if (fallbackToWebsite) {
+            try {
+                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://lodgist.online")))
+            } catch (_: ActivityNotFoundException) {
+                // No browser either: nothing to open.
+            } catch (_: SecurityException) {
+                // Browser refused the intent: nothing to open.
+            }
+        }
+        false
+    } catch (_: SecurityException) {
+        false
     }
 }
 
@@ -58,7 +81,7 @@ fun openWhatsAppSupport(context: Context, customMessage: String? = null) {
 @Composable
 fun LodgistTopBar(
     title: String = "Lodgist",
-    subtitle: String = "Verified Nigeria Rentals",
+    subtitle: String = "Nigeria Rentals",
     canNavigateBack: Boolean = false,
     onNavigateBack: () -> Unit = {},
     showWhatsAppButton: Boolean = true,
@@ -86,6 +109,7 @@ fun LodgistTopBar(
                 Column {
                     Text(
                         text = title,
+                        modifier = Modifier.semantics { heading() },
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface

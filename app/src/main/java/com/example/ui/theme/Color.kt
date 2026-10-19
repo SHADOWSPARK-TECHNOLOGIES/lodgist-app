@@ -35,3 +35,12 @@ val LodgistMutedLight = Color(0xFF94A3B8)
 val TruthScoreGreen = Color(0xFF10B981)
 val TruthScoreYellow = Color(0xFFF59E0B)
 val TruthScoreRed = Color(0xFFEF4444)
+
+// Accessible text/button colours (LM-01). Light-theme values reach >= 4.5:1 on white and on the
+// 15% tinted chips; dark-theme values reuse the brand colours, which already pass on navy.
+val LodgistTealTextOnLight = Color(0xFF0E6B59)
+val LodgistOrangeTextOnLight = Color(0xFFB13A0A)
+val LodgistGreyTextOnLight = Color(0xFF4B5563)
+val LodgistGreyTextOnDark = Color(0xFF94A3B8)
+// White text on this container is 6.0:1 in both themes.
+val LodgistOrangeButton = Color(0xFFB13A0A)
