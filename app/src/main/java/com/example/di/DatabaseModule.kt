@@ -80,12 +80,10 @@ object DatabaseModule {
      */
     fun providePropertyRepository(
         database: AppDatabase,
-        apiService: com.example.data.remote.api.LodgistApiService? = NetworkModule.provideLodgistApiService(),
         ioDispatcher: CoroutineDispatcher = Dispatchers.IO
     ): PropertyRepository {
         return PropertyRepository(
             propertyDao = providePropertyListingDao(database),
-            apiService = apiService,
             ioDispatcher = ioDispatcher
         )
     }

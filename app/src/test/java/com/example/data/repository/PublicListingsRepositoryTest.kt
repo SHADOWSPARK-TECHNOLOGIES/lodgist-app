@@ -3,8 +3,6 @@ package com.example.data.repository
 import com.example.data.remote.PublicListingDto
 import com.example.data.remote.PublicListingsResponse
 import com.example.data.remote.api.LodgistApiService
-import com.example.data.remote.model.PropertyListResponseDto
-import com.example.data.remote.model.PropertyDto
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import java.io.IOException
@@ -22,21 +20,9 @@ private class FakeApi(
 ) : LodgistApiService {
     override suspend fun getPublicListings(limit: Int): Response<PublicListingsResponse> = answer()
 
-    // Not exercised by this screen. Present only to satisfy the interface.
-    override suspend fun getProperties(city: String?, verified: Boolean?, limit: Int) =
-        throw UnsupportedOperationException()
 
-    override suspend fun getPropertiesWrapped(city: String?) =
-        throw UnsupportedOperationException()
 
-    override suspend fun getPropertyById(propertyId: String) =
-        throw UnsupportedOperationException()
 
-    override suspend fun getFeaturedProperties() =
-        throw UnsupportedOperationException()
-
-    override suspend fun createPropertyListing(property: PropertyDto) =
-        throw UnsupportedOperationException()
 }
 
 private fun home(id: Long) = PublicListingDto(id = id, title = "Home $id", price = 250000.0)

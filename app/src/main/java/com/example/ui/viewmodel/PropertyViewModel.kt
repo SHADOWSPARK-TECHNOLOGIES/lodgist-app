@@ -279,25 +279,6 @@ class PropertyViewModel(
     }
 
     /**
-     * Refreshes listings by querying the Lodgist website backend API and updating the Room cache.
-     */
-    fun refreshFromBackendApi(city: String? = null, verified: Boolean? = null) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            try {
-                val result = propertyRepository.fetchAndCachePropertiesFromApi(city, verified)
-                if (result.isFailure) {
-                    _errorMessage.value = result.exceptionOrNull()?.message
-                }
-            } catch (e: Exception) {
-                _errorMessage.value = e.message
-            } finally {
-                _isLoading.value = false
-            }
-        }
-    }
-
-    /**
      * Fetches and selects a property by its ID from the repository cache.
      */
     fun loadPropertyById(id: String) {

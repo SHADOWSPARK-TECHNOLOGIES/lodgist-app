@@ -3,8 +3,6 @@ package com.example.ui.viewmodel
 import com.example.data.remote.PublicListingDto
 import com.example.data.remote.PublicListingsResponse
 import com.example.data.remote.api.LodgistApiService
-import com.example.data.remote.model.PropertyDto
-import com.example.data.remote.model.PropertyListResponseDto
 import com.example.data.repository.PublicListingsRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -25,16 +23,6 @@ private class FakeApi(
     private val answer: () -> Response<PublicListingsResponse>
 ) : LodgistApiService {
     override suspend fun getPublicListings(limit: Int) = answer()
-    override suspend fun getProperties(city: String?, verified: Boolean?, limit: Int) =
-        throw UnsupportedOperationException()
-    override suspend fun getPropertiesWrapped(city: String?) =
-        throw UnsupportedOperationException()
-    override suspend fun getPropertyById(propertyId: String) =
-        throw UnsupportedOperationException()
-    override suspend fun getFeaturedProperties() =
-        throw UnsupportedOperationException()
-    override suspend fun createPropertyListing(property: PropertyDto) =
-        throw UnsupportedOperationException()
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
