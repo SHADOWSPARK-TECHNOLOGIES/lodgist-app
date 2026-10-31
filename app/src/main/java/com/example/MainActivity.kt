@@ -28,6 +28,7 @@ import com.example.ui.screens.EscrowRevenueScreen
 import com.example.ui.screens.ExploreScreen
 import com.example.ui.screens.InspectionsScreen
 import com.example.ui.screens.ListPropertyScreen
+import com.example.ui.screens.ListingDetailScreen
 import com.example.ui.screens.LiveListingsScreen
 import com.example.ui.screens.PropertyDetailScreen
 import com.example.ui.screens.SavedScreen
@@ -164,11 +165,23 @@ fun LodgistApp(viewModel: LodgistViewModel) {
             ScreenDestination.LIVE_LISTINGS -> {
                 val liveViewModel: LiveListingsViewModel = viewModel()
                 val liveState by liveViewModel.uiState.collectAsStateWithLifecycle()
-                LiveListingsScreen(
-                    uiState = liveState,
-                    onRetry = { liveViewModel.refresh() },
-                    modifier = Modifier.padding(innerPadding)
-                )
+                val detailState by liveViewModel.detailState.collectAsStateWithLifecycle()
+                val openDetail = detailState
+                if (openDetail == null) {
+                    LiveListingsScreen(
+                        uiState = liveState,
+                        onRetry = { liveViewModel.refresh() },
+                        onOpenDetail = { id -> liveViewModel.openDetail(id) },
+                        modifier = Modifier.padding(innerPadding)
+                    )
+                } else {
+                    ListingDetailScreen(
+                        uiState = openDetail,
+                        onBack = { liveViewModel.closeDetail() },
+                        onRetry = { liveViewModel.retryDetail() },
+                        modifier = Modifier.padding(innerPadding)
+                    )
+                }
             }
 
             ScreenDestination.INSPECTIONS -> {

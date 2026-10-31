@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -48,7 +49,8 @@ import com.example.ui.viewmodel.LiveListingsUiState
 fun LiveListingsScreen(
     uiState: LiveListingsUiState,
     onRetry: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onOpenDetail: (Long) -> Unit = {}
 ) {
     when (uiState) {
         LiveListingsUiState.Loading -> StatusMessage(
@@ -117,14 +119,14 @@ fun LiveListingsScreen(
                 )
             }
             items(uiState.homes, key = { it.id ?: 0L }) { home ->
-                ListingRow(home)
+                ListingRow(home, onOpenDetail)
             }
         }
     }
 }
 
 @Composable
-private fun ListingRow(home: PublicListingDto) {
+private fun ListingRow(home: PublicListingDto, onOpenDetail: (Long) -> Unit) {
     val place = home.property
     val area = listOfNotNull(
         place?.city?.takeIf { it.isNotBlank() },
@@ -139,6 +141,7 @@ private fun ListingRow(home: PublicListingDto) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable(enabled = home.id != null) { home.id?.let(onOpenDetail) }
             .testTag("live_listing_${home.id}"),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {

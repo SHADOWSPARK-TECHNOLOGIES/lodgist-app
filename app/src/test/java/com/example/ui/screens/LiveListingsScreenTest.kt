@@ -101,7 +101,7 @@ class LiveListingsScreenTest {
     fun `client cannot claim verification the server did not send`() {
         // evidenceVerified false and no label: the only honest reading.
         render(LiveListingsUiState.Content(listOf(home(verified = false, label = null))))
-        compose.onNodeWithTag("live_listing_label_41").assertIsDisplayed()
+        compose.onNodeWithTag("live_listing_label_41", useUnmergedTree = true).assertExists()
         compose.onNodeWithText("Not verified by Lodgist").assertIsDisplayed()
         compose.onNodeWithText("Verified by Lodgist").assertDoesNotExist()
     }

@@ -1,5 +1,6 @@
 package com.example.ui.viewmodel
 
+import com.example.data.remote.PublicListingDetailResponse
 import com.example.data.remote.PublicListingDto
 import com.example.data.remote.PublicListingsResponse
 import com.example.data.remote.api.LodgistApiService
@@ -20,9 +21,11 @@ import org.junit.Test
 import retrofit2.Response
 
 private class FakeApi(
-    private val answer: () -> Response<PublicListingsResponse>
+    private val answer: () -> Response<PublicListingsResponse> = { error("no list answer") },
+    private val detailAnswer: (Long) -> Response<PublicListingDetailResponse> = { error("no detail answer") }
 ) : LodgistApiService {
     override suspend fun getPublicListings(limit: Int) = answer()
+    override suspend fun getListingDetail(id: Long) = detailAnswer(id)
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -92,5 +95,79 @@ class LiveListingsViewModelTest {
 
         val state = vm.uiState.value
         assertTrue("expected Content but was $state", state is LiveListingsUiState.Content)
+    }
+}
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class ListingDetailViewModelTest {
+
+    @Before
+    fun setUp() {
+        Dispatchers.setMain(UnconfinedTestDispatcher())
+    }
+
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
+    }
+
+    private fun viewModel(detail: (Long) -> Response<PublicListingDetailResponse>) =
+        LiveListingsViewModel(PublicListingsRepository(FakeApi(detailAnswer = detail)))
+
+    @Test
+    fun `no detail is open until asked`() = runTest {
+        val vm = viewModel { Response.success(PublicListingDetailResponse(true, PublicListingDto(id = 1))) }
+        assertEquals(null, vm.detailState.value)
+    }
+
+    @Test
+    fun `opening a home loads it, closing returns to the list`() = runTest {
+        val vm = viewModel { id ->
+            Response.success(PublicListingDetailResponse(true, PublicListingDto(id = id, title = "Home")))
+        }
+
+        vm.openDetail(41)
+        val state = vm.detailState.value
+        assertTrue("expected Content but was $state", state is ListingDetailUiState.Content)
+        assertEquals(41L, (state as ListingDetailUiState.Content).home.id)
+
+        vm.closeDetail()
+        assertEquals(null, vm.detailState.value)
+    }
+
+    @Test
+    fun `a 404 shows NotFound rather than a failure`() = runTest {
+        val vm = viewModel {
+            Response.error(404, "{}".toResponseBody("application/json".toMediaType()))
+        }
+        vm.openDetail(999999)
+        assertEquals(ListingDetailUiState.NotFound, vm.detailState.value)
+    }
+
+    @Test
+    fun `offline detail is its own state`() = runTest {
+        val vm = viewModel { throw java.io.IOException("offline") }
+        vm.openDetail(41)
+        assertEquals(ListingDetailUiState.Offline, vm.detailState.value)
+    }
+
+    @Test
+    fun `retry re-requests the same home`() = runTest {
+        var offline = true
+        var calls = 0
+        val vm = viewModel { id ->
+            calls += 1
+            if (offline) throw java.io.IOException("offline")
+            Response.success(PublicListingDetailResponse(true, PublicListingDto(id = id)))
+        }
+
+        vm.openDetail(41)
+        assertEquals(ListingDetailUiState.Offline, vm.detailState.value)
+
+        offline = false
+        vm.retryDetail()
+
+        assertTrue(vm.detailState.value is ListingDetailUiState.Content)
+        assertEquals(2, calls)
     }
 }

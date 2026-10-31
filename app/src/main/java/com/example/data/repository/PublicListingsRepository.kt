@@ -1,5 +1,6 @@
 package com.example.data.repository
 
+import com.example.data.remote.PublicListingDetailResponse
 import com.example.data.remote.PublicListingDto
 import com.example.data.remote.PublicListingsResponse
 import com.example.data.remote.api.LodgistApiService
@@ -29,6 +30,21 @@ sealed interface PublicListingsResult {
 
     /** Any other non-success response, or a body that did not match the contract. */
     data class Failed(val httpCode: Int) : PublicListingsResult
+}
+
+sealed interface ListingDetailResult {
+    /** The API returned one published home. */
+    data class Loaded(val home: PublicListingDto) : ListingDetailResult
+
+    /**
+     * 404. The API collapses "does not exist" and "not publicly eligible" into
+     * this one answer on purpose, so the client must not try to tell them apart.
+     */
+    data object NotFound : ListingDetailResult
+
+    data object Offline : ListingDetailResult
+    data object Unauthorized : ListingDetailResult
+    data class Failed(val httpCode: Int) : ListingDetailResult
 }
 
 /**
@@ -70,10 +86,36 @@ class PublicListingsRepository(
         else PublicListingsResult.Loaded(homes)
     }
 
+    suspend fun loadDetail(id: Long): ListingDetailResult {
+        val response: Response<PublicListingDetailResponse> = try {
+            api.getListingDetail(id)
+        } catch (_: IOException) {
+            return ListingDetailResult.Offline
+        } catch (_: Exception) {
+            return ListingDetailResult.Failed(HTTP_UNKNOWN)
+        }
+
+        // 404 is a real answer here: the API hides non-public homes behind it.
+        if (response.code() == HTTP_NOT_FOUND) return ListingDetailResult.NotFound
+        if (response.code() == HTTP_UNAUTHORIZED || response.code() == HTTP_FORBIDDEN) {
+            return ListingDetailResult.Unauthorized
+        }
+        if (!response.isSuccessful) return ListingDetailResult.Failed(response.code())
+
+        val body = response.body() ?: return ListingDetailResult.Failed(response.code())
+        if (!body.success) {
+            // 200 with success=false is a refusal, not a missing home.
+            return ListingDetailResult.Failed(response.code())
+        }
+        val home = body.data ?: return ListingDetailResult.Failed(response.code())
+        return ListingDetailResult.Loaded(home)
+    }
+
     companion object {
         const val PAGE_SIZE = 12
         const val HTTP_UNAUTHORIZED = 401
         const val HTTP_FORBIDDEN = 403
+        const val HTTP_NOT_FOUND = 404
         const val HTTP_UNKNOWN = -1
     }
 }
