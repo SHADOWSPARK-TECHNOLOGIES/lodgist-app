@@ -3,7 +3,7 @@ package com.example.data.repository
 import com.example.data.local.EscrowDao
 import com.example.data.local.InspectionDao
 import com.example.data.local.LandlordListingDao
-import com.example.data.local.LodgistDatabase
+import com.example.data.local.AppDatabase
 import com.example.data.local.PropertyDao
 import com.example.data.model.EscrowPaymentEntity
 import com.example.data.model.InspectionBookingEntity

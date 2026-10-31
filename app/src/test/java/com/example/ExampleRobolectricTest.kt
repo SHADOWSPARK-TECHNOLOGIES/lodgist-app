@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.example.data.local.AppDatabase
-import com.example.data.local.LodgistDatabase
 import com.example.data.model.EscrowPaymentEntity
 import com.example.data.model.Property
 import com.example.data.model.PropertyEntity
@@ -95,7 +94,7 @@ class ExampleRobolectricTest {
   @Test
   fun testPropertyListingDataClassAndRoomCache() = runBlocking {
     val context = ApplicationProvider.getApplicationContext<Context>()
-    val inMemoryDb = Room.inMemoryDatabaseBuilder(context, LodgistDatabase::class.java)
+    val inMemoryDb = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java)
       .allowMainThreadQueries()
       .build()
 
@@ -159,7 +158,7 @@ class ExampleRobolectricTest {
   @Test
   fun testPropertyRepository() = runBlocking {
     val context = ApplicationProvider.getApplicationContext<Context>()
-    val inMemoryDb = Room.inMemoryDatabaseBuilder(context, LodgistDatabase::class.java)
+    val inMemoryDb = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java)
       .allowMainThreadQueries()
       .build()
 

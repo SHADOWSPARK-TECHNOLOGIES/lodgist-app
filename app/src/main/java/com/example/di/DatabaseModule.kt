@@ -31,7 +31,7 @@ object DatabaseModule {
      */
     fun provideAppDatabase(context: Context): AppDatabase {
         return databaseInstance ?: synchronized(this) {
-            databaseInstance ?: AppDatabase.getInstance(context).also {
+            databaseInstance ?: AppDatabase.getDatabase(context).also {
                 databaseInstance = it
             }
         }

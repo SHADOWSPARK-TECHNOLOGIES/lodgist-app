@@ -53,15 +53,6 @@ class PropertyRepository(
     }
 
     /**
-     * Observes a single property by its ID as a reactive stream.
-     *
-     * @param id The unique identifier of the property.
-     */
-    fun observePropertyById(id: String): Flow<Property?> = flow {
-        emit(propertyDao.getPropertyById(id))
-    }.flowOn(ioDispatcher)
-
-    /**
      * Caches a single property listing into the local Room database.
      * Replaces any existing record with the same ID.
      *
