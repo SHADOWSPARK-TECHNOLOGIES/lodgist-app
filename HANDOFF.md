@@ -54,6 +54,29 @@ Free memory was about 4 GB, with 3.1 GB of swap already used. Disk free was 65 G
 Rechecked after that note. adb still listed no devices. The emulator binary and system-images directory are still absent. Available memory was about 5.9 GB. That is still tight for an emulator on a machine already using 9.5 GB, so no image was installed.
 Runtime verification of the empty screen, the failed-load screen, the reload button, the local-save labels, and the disabled pay button remains blocked until a device is attached.
 
+## Runtime verification, 31 October 2026 — the emulator does exist
+
+The blocker above is out of date. An emulator is installed and boots; what was missing was the right path.
+
+- `~/Android/Sdk/emulator/emulator` is present.
+- `~/Android/Sdk/system-images/android-37.0/google_apis_playstore/x86_64` is present.
+- The AVD is `Medium_Phone_API_37.0` and it lives under `~/.config/.android/avd/`, **not** `~/.android/avd`. A plain `emulator -avd Medium_Phone_API_37.0` fails with `Unknown AVD name`; the earlier checks only looked in `~/.android/avd` and concluded no AVD existed.
+- It boots headless in 40–170 s:
+
+      ANDROID_AVD_HOME=/home/moronto/.config/.android/avd \
+        ~/Android/Sdk/emulator/emulator -avd Medium_Phone_API_37.0 \
+        -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect -memory 2048
+
+- First cold start ANRs on this host at 2 GB with swiftshader (main thread blocked >5 s). The app then renders Explore behind the dialog, and a warm relaunch is responsive. Do not read that ANR as an app defect without checking a warm start.
+
+Verified on the emulator so far:
+
+- `GET /api/listings` from the device: real `200`, body 110 bytes, renders "No published homes yet".
+- Airplane mode: `UnknownHostException`, renders "You are offline", not an empty market.
+- A proxy answering `401` cannot exercise the unauthorized state: OkHttp tunnels `CONNECT` before it sees a status, so the stub answered `CONNECT ... 501`. That state stays test-only until a device build points at a plain-HTTP base URL.
+
+Still device-unverified: the listing detail screen (production publishes nothing, so no row can be opened), the landlord local-save labels, the inspection labels, and the disabled pay control.
+
 ## Device test, when a phone is plugged in
 
 Use the existing debug APK. Do not install a new signing key.
