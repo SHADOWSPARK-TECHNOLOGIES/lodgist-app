@@ -19,6 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.data.model.PropertyEntity
 import com.example.ui.components.InspectionBookingSheet
 import com.example.ui.components.LodgistBottomBar
@@ -27,11 +28,13 @@ import com.example.ui.screens.EscrowRevenueScreen
 import com.example.ui.screens.ExploreScreen
 import com.example.ui.screens.InspectionsScreen
 import com.example.ui.screens.ListPropertyScreen
+import com.example.ui.screens.LiveListingsScreen
 import com.example.ui.screens.PropertyDetailScreen
 import com.example.ui.screens.SavedScreen
 import com.example.ui.screens.TrustSafetyScreen
 import com.example.ui.theme.LodgistTheme
 import com.example.ui.viewmodel.LodgistViewModel
+import com.example.ui.viewmodel.LiveListingsViewModel
 import com.example.ui.viewmodel.ScreenDestination
 
 class MainActivity : ComponentActivity() {
@@ -88,6 +91,7 @@ fun LodgistApp(viewModel: LodgistViewModel) {
                         ScreenDestination.TRUST_SAFETY -> "Trust & Safety"
                         ScreenDestination.LIST_PROPERTY -> "List Property"
                         ScreenDestination.PROPERTY_DETAIL -> "Property Details"
+                        ScreenDestination.LIVE_LISTINGS -> "Live Listings"
                     },
                     subtitle = when (currentScreen) {
                         ScreenDestination.EXPLORE -> "Published homes"
@@ -97,10 +101,16 @@ fun LodgistApp(viewModel: LodgistViewModel) {
                         ScreenDestination.TRUST_SAFETY -> "What Lodgist checks"
                         ScreenDestination.LIST_PROPERTY -> "Landlord & Owner Portal"
                         ScreenDestination.PROPERTY_DETAIL -> ""
+                        ScreenDestination.LIVE_LISTINGS -> "From the Lodgist API"
                     },
                     canNavigateBack = false,
                     savedCount = savedProperties.size,
-                    onSavedClick = { viewModel.navigateTo(ScreenDestination.SAVED) }
+                    onSavedClick = { viewModel.navigateTo(ScreenDestination.SAVED) },
+                    onLiveClick = if (currentScreen == ScreenDestination.EXPLORE) {
+                        { viewModel.navigateTo(ScreenDestination.LIVE_LISTINGS) }
+                    } else {
+                        null
+                    }
                 )
             }
         },
@@ -149,6 +159,16 @@ fun LodgistApp(viewModel: LodgistViewModel) {
                 } ?: run {
                     viewModel.clearSelectedProperty()
                 }
+            }
+
+            ScreenDestination.LIVE_LISTINGS -> {
+                val liveViewModel: LiveListingsViewModel = viewModel()
+                val liveState by liveViewModel.uiState.collectAsStateWithLifecycle()
+                LiveListingsScreen(
+                    uiState = liveState,
+                    onRetry = { liveViewModel.refresh() },
+                    modifier = Modifier.padding(innerPadding)
+                )
             }
 
             ScreenDestination.INSPECTIONS -> {

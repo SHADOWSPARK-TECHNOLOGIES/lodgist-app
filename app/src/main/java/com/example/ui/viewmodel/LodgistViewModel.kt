@@ -34,7 +34,8 @@ enum class ScreenDestination {
     ESCROW_VAULT,
     TRUST_SAFETY,
     LIST_PROPERTY,
-    PROPERTY_DETAIL
+    PROPERTY_DETAIL,
+    LIVE_LISTINGS
 }
 
 data class FilterState(

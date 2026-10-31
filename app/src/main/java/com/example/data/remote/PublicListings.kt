@@ -43,7 +43,18 @@ sealed class ListingsRead {
 @JsonClass(generateAdapter = true)
 data class PublicListingsResponse(
     val success: Boolean = false,
-    val data: List<PublicListingDto> = emptyList()
+    val data: List<PublicListingDto> = emptyList(),
+    val pagination: PublicPaginationDto? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class PublicPaginationDto(
+    val total: Int? = null,
+    val page: Int? = null,
+    val pages: Int? = null,
+    val totalPages: Int? = null,
+    val limit: Int? = null,
+    val pageSize: Int? = null
 )
 
 @JsonClass(generateAdapter = true)
@@ -52,9 +63,13 @@ data class PublicListingDto(
     val title: String? = null,
     val description: String? = null,
     val price: Double? = null,
+    val currency: String? = null,
     val status: String? = null,
     val property: PublicPropertyDto? = null,
-    val verificationLabel: String? = null
+    val verificationLabel: String? = null,
+    val evidenceVerified: Boolean? = null,
+    val actions: PublicListingActionsDto? = null,
+    val images: List<PublicListingImageDto> = emptyList()
 ) {
     fun toEntity(): PropertyEntity? {
         val listingId = id?.toString() ?: return null
@@ -103,4 +118,20 @@ data class PublicPropertyDto(
     val bedrooms: Int? = null,
     val bathrooms: Int? = null,
     val propertyType: String? = null
+)
+
+/** Server-decided affordances. The client mirrors them; it does not invent them. */
+@JsonClass(generateAdapter = true)
+data class PublicListingActionsDto(
+    val enquiry: Boolean? = null,
+    val viewing: Boolean? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class PublicListingImageDto(
+    val id: Long? = null,
+    val url: String? = null,
+    val altText: String? = null,
+    val isPrimary: Boolean? = null,
+    val order: Int? = null
 )
