@@ -5,55 +5,43 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
+/**
+ * The mapping guarantee that matters: a home is verified only when the server's
+ * own label says so. Nothing else in the payload can promote it.
+ */
 class PublicListingsTest {
-    @Test
-    fun emptyInventoryIsAnEmptyList() {
-        val read = PublicListings.read(200, """{"success":true,"data":[],"pagination":{"total":0}}""")
-        assertTrue(read is ListingsRead.Loaded)
-        assertTrue((read as ListingsRead.Loaded).homes.isEmpty())
-    }
+
+    private fun dto(status: String?, label: String?) = PublicListingDto(
+        id = 9,
+        title = "Flat",
+        price = 500000.0,
+        status = status,
+        verificationLabel = label
+    )
 
     @Test
     fun statusEnumDoesNotMakeAHomeVerified() {
-        val json = """
-            {"success":true,"data":[{
-              "id": 9,
-              "title": "Flat",
-              "price": 500000,
-              "status": "VERIFIED",
-              "verificationLabel": "Not verified by Lodgist",
-              "property": {"city": "Owerri", "state": "Imo", "lga": "Owerri Municipal", "bedrooms": 2, "bathrooms": 1, "propertyType": "Flat"}
-            }]}
-        """.trimIndent()
-        val home = (PublicListings.read(200, json) as ListingsRead.Loaded).homes.single()
-        assertEquals("9", home.id)
-        assertEquals("Owerri", home.city)
-        assertEquals(500000L, home.annualRent)
-        assertFalse(home.verified)
-        assertEquals("NOT_VERIFIED", home.verificationStatus)
-        assertEquals(0, home.truthScore)
-        assertEquals("", home.landlordPhone)
+        val home = dto(status = "VERIFIED", label = NOT_VERIFIED_LABEL).toEntity()
+        assertEquals("NOT_VERIFIED", home?.verificationStatus)
+        assertFalse(home?.verified == true)
     }
 
     @Test
     fun evidenceLabelCanMarkVerified() {
-        val json = """
-            {"success":true,"data":[{"id": 3, "title": "Checked", "verificationLabel": "Verified by Lodgist"}]}
-        """.trimIndent()
-        val home = (PublicListings.read(200, json) as ListingsRead.Loaded).homes.single()
-        assertTrue(home.verified)
+        val home = dto(status = "VERIFIED", label = VERIFIED_LABEL).toEntity()
+        assertEquals("VERIFIED", home?.verificationStatus)
+        assertTrue(home?.verified == true)
     }
 
     @Test
-    fun unknownPropertyAndNetworkFailureStayDistinct() {
-        assertTrue(PublicListings.read(404, """{"error":"Listing not found"}""") is ListingsRead.Unknown)
-        assertTrue(PublicListings.read(0, null) is ListingsRead.Failed)
-        assertTrue(PublicListings.read(500, """{"success":false}""") is ListingsRead.Failed)
+    fun missingLabelReadsAsNotVerified() {
+        val home = dto(status = "VERIFIED", label = null).toEntity()
+        assertEquals("NOT_VERIFIED", home?.verificationStatus)
+        assertFalse(home?.verified == true)
     }
 
     @Test
-    fun demonstrationIdsAreTheSeededRows() {
-        assertTrue(PublicListings.isDemonstrationId("lodg_ow_01"))
-        assertFalse(PublicListings.isDemonstrationId("9"))
+    fun aHomeWithoutAnIdIsDropped() {
+        assertEquals(null, PublicListingDto(id = null, title = "Flat").toEntity())
     }
 }

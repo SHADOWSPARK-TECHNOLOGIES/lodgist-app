@@ -9,6 +9,7 @@ import com.example.data.local.PropertyDao
 import com.example.data.local.PropertyListingDao
 import com.example.data.repository.LodgistRepository
 import com.example.data.repository.PropertyRepository
+import com.example.data.repository.PublicListingsRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 
@@ -99,7 +100,7 @@ object DatabaseModule {
             inspectionDao = provideInspectionDao(database),
             landlordListingDao = provideLandlordListingDao(database),
             escrowDao = provideEscrowDao(database),
-            apiService = NetworkModule.provideLodgistApiService()
+            listingsReader = PublicListingsRepository(NetworkModule.provideLodgistApiService())
         )
     }
 

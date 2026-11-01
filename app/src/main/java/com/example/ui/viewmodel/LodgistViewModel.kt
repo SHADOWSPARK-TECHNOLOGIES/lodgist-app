@@ -8,8 +8,7 @@ import com.example.data.model.EscrowPaymentEntity
 import com.example.data.model.InspectionBookingEntity
 import com.example.data.model.LandlordListingEntity
 import com.example.data.model.PropertyEntity
-import com.example.data.remote.ListingsRead
-import com.example.data.remote.PublicListings
+import com.example.data.repository.PublicListingsResult
 import com.example.di.DatabaseModule
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -66,11 +65,11 @@ class LodgistViewModel(application: Application) : AndroidViewModel(application)
     val userMessage: StateFlow<String?> = _userMessage.asStateFlow()
 
     val allProperties: StateFlow<List<PropertyEntity>> = repository.allProperties
-        .map { rows -> rows.filter { !PublicListings.isDemonstrationId(it.id) } }
+        .map { rows -> rows.filter { !isSeededRow(it.id) } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val favoriteProperties: StateFlow<List<PropertyEntity>> = repository.favoriteProperties
-        .map { rows -> rows.filter { !PublicListings.isDemonstrationId(it.id) } }
+        .map { rows -> rows.filter { !isSeededRow(it.id) } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val inspectionBookings: StateFlow<List<InspectionBookingEntity>> = repository.inspectionBookings
@@ -134,15 +133,23 @@ class LodgistViewModel(application: Application) : AndroidViewModel(application)
     fun refreshPublishedHomes() {
         viewModelScope.launch {
             when (val read = repository.refreshPublishedHomes()) {
-                is ListingsRead.Loaded -> {
-                    _inventoryLoad.value = if (read.homes.isEmpty()) InventoryLoad.EMPTY else InventoryLoad.READY
-                    _userMessage.value = if (read.homes.isEmpty()) "No published homes yet." else null
+                is PublicListingsResult.Loaded -> {
+                    _inventoryLoad.value = InventoryLoad.READY
+                    _userMessage.value = null
                 }
-                is ListingsRead.Unknown -> {
+                PublicListingsResult.Empty -> {
+                    _inventoryLoad.value = InventoryLoad.EMPTY
+                    _userMessage.value = "No published homes yet."
+                }
+                PublicListingsResult.Offline -> {
                     _inventoryLoad.value = InventoryLoad.FAILED
-                    _userMessage.value = "That home is not in the published list."
+                    _userMessage.value = "Could not load homes. Check your connection. Nothing on screen is a live listing."
                 }
-                is ListingsRead.Failed -> {
+                PublicListingsResult.Unauthorized -> {
+                    _inventoryLoad.value = InventoryLoad.FAILED
+                    _userMessage.value = "The API refused this request. Sign in again."
+                }
+                is PublicListingsResult.Failed -> {
                     _inventoryLoad.value = InventoryLoad.FAILED
                     _userMessage.value = "Could not load homes. Nothing on screen is a live listing."
                 }
@@ -285,6 +292,9 @@ class LodgistViewModel(application: Application) : AndroidViewModel(application)
     fun clearUserMessage() {
         _userMessage.value = null
     }
+
+    /** Rows the app used to seed offline can still sit in older local databases. */
+    private fun isSeededRow(id: String): Boolean = id.startsWith("lodg_")
 
     private fun formatNaira(amount: Long): String {
         return com.example.ui.components.formatNaira(amount)

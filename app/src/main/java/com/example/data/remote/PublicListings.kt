@@ -2,43 +2,12 @@ package com.example.data.remote
 
 import com.example.data.model.PropertyEntity
 import com.squareup.moshi.JsonClass
-import com.squareup.moshi.Moshi
-import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 
-/**
- * Read of GET /api/listings on the Lodgist API.
- * Owned by the web/API project. This client only adapts the published shape.
- */
-object PublicListings {
-    const val VERIFIED_LABEL = "Verified by Lodgist"
-    const val NOT_VERIFIED_LABEL = "Not verified by Lodgist"
+/** The label the API uses when a home has been evidence-checked. */
+const val VERIFIED_LABEL = "Verified by Lodgist"
 
-    private val moshi: Moshi = Moshi.Builder()
-        .addLast(KotlinJsonAdapterFactory())
-        .build()
-
-    private val adapter = moshi.adapter(PublicListingsResponse::class.java)
-
-    fun read(httpCode: Int, body: String?): ListingsRead {
-        if (httpCode == 404) return ListingsRead.Unknown
-        if (httpCode != 200 || body.isNullOrBlank()) return ListingsRead.Failed(httpCode)
-        return try {
-            val parsed = adapter.fromJson(body) ?: return ListingsRead.Failed(httpCode)
-            if (!parsed.success) return ListingsRead.Failed(httpCode)
-            ListingsRead.Loaded(parsed.data.mapNotNull { it.toEntity() })
-        } catch (_: Exception) {
-            ListingsRead.Failed(httpCode)
-        }
-    }
-
-    fun isDemonstrationId(id: String): Boolean = id.startsWith("lodg_")
-}
-
-sealed class ListingsRead {
-    data class Loaded(val homes: List<PropertyEntity>) : ListingsRead()
-    data object Unknown : ListingsRead()
-    data class Failed(val httpCode: Int) : ListingsRead()
-}
+/** Everything else, including a missing label, reads as not verified. */
+const val NOT_VERIFIED_LABEL = "Not verified by Lodgist"
 
 @JsonClass(generateAdapter = true)
 data class PublicListingsResponse(
@@ -81,8 +50,8 @@ data class PublicListingDto(
 ) {
     fun toEntity(): PropertyEntity? {
         val listingId = id?.toString() ?: return null
-        val label = verificationLabel ?: PublicListings.NOT_VERIFIED_LABEL
-        val evidenceVerified = label == PublicListings.VERIFIED_LABEL
+        val label = verificationLabel ?: NOT_VERIFIED_LABEL
+        val evidenceVerified = label == VERIFIED_LABEL
         val place = property
         val city = place?.city?.takeIf { it.isNotBlank() } ?: ""
         val area = place?.lga?.takeIf { it.isNotBlank() } ?: ""
