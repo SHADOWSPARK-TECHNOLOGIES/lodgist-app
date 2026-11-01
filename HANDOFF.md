@@ -77,6 +77,34 @@ Verified on the emulator so far:
 
 Still device-unverified: the listing detail screen (production publishes nothing, so no row can be opened), the landlord local-save labels, the inspection labels, and the disabled pay control.
 
+## Runtime verification, 1 November 2026 — a phone is attached, and the fold landed
+
+`adb devices` now lists a physical device, `0826317000000025`, API 36. The
+earlier note that no device is attached is out of date. Nothing has been
+installed on it yet; it has no copy of the app.
+
+Emulator re-check, same boot command as above:
+
+- installed over the existing app instead of wiping it, so the version-3
+  database was upgraded in place: no Room errors, no crash, database rebuilt
+  at version 4, and the screen rendered "No published homes yet. Sample homes
+  are not shown." — the deleted seed rows are gone from an upgraded install.
+- a live `200` from `/api/listings` arrived during that run.
+
+Schema note: the database has no Room migrations and `fallbackToDestructiveMigration()`
+is on, so the 3 -> 4 bump drops and rebuilds local tables once. Locally saved
+favourites are lost on the upgrade. That is this project's existing policy,
+not a new one.
+
+The duplicate browse surface is gone: Explore is the only browse path, and
+`PropertyDetailScreen` remains the only detail screen. `PublicListingsRepository.load()`
+is the single reader; the client no longer calls `GET /api/listings/:id` even
+though the route exists.
+
+Test count dropped from 64 to 23 across the audit cuts, because four test
+classes were deleted along with the code they described. Nothing was removed
+to make a failing run pass.
+
 ## Device test, when a phone is plugged in
 
 Use the existing debug APK. Do not install a new signing key.
