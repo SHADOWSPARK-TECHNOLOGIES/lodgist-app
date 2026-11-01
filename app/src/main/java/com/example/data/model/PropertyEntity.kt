@@ -45,18 +45,4 @@ data class PropertyEntity(
     fun amenityList(): List<String> {
         return amenities.split(",").map { it.trim() }.filter { it.isNotEmpty() }
     }
-
-    fun toProperty(): Property {
-        return Property(
-            id = id,
-            title = title,
-            price = if (price > 0) price else annualRent.toDouble(),
-            location = if (location.isNotBlank()) location else "$neighborhood, $city",
-            description = description,
-            verified = verified || (verificationStatus == "VERIFIED"),
-            bedrooms = bedrooms,
-            bathrooms = bathrooms,
-            propertyType = propertyType
-        )
-    }
 }

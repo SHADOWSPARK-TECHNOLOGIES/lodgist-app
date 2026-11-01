@@ -6,9 +6,7 @@ import com.example.data.local.EscrowDao
 import com.example.data.local.InspectionDao
 import com.example.data.local.LandlordListingDao
 import com.example.data.local.PropertyDao
-import com.example.data.local.PropertyListingDao
 import com.example.data.repository.LodgistRepository
-import com.example.data.repository.PropertyRepository
 import com.example.data.repository.PublicListingsRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -39,13 +37,6 @@ object DatabaseModule {
     }
 
     /**
-     * Provides the [PropertyListingDao] from the given [AppDatabase].
-     */
-    fun providePropertyListingDao(database: AppDatabase): PropertyListingDao {
-        return database.propertyListingDao()
-    }
-
-    /**
      * Provides the [PropertyDao] from the given [AppDatabase].
      */
     fun providePropertyDao(database: AppDatabase): PropertyDao {
@@ -71,22 +62,6 @@ object DatabaseModule {
      */
     fun provideEscrowDao(database: AppDatabase): EscrowDao {
         return database.escrowDao()
-    }
-
-    /**
-     * Factory method providing [PropertyRepository] with its DAO and IO dispatcher.
-     *
-     * @param database The [AppDatabase] providing the [PropertyListingDao].
-     * @param ioDispatcher The [CoroutineDispatcher] for disk I/O (defaults to [Dispatchers.IO]).
-     */
-    fun providePropertyRepository(
-        database: AppDatabase,
-        ioDispatcher: CoroutineDispatcher = Dispatchers.IO
-    ): PropertyRepository {
-        return PropertyRepository(
-            propertyDao = providePropertyListingDao(database),
-            ioDispatcher = ioDispatcher
-        )
     }
 
     /**
