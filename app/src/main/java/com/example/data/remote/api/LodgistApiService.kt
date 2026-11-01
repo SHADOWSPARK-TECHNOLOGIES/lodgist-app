@@ -1,10 +1,8 @@
 package com.example.data.remote.api
 
-import com.example.data.remote.PublicListingDetailResponse
 import com.example.data.remote.PublicListingsResponse
 import retrofit2.Response
 import retrofit2.http.GET
-import retrofit2.http.Path
 import retrofit2.http.Query
 
 /**
@@ -29,13 +27,4 @@ interface LodgistApiService {
         @Query("limit") limit: Int = 12
     ): Response<PublicListingsResponse>
 
-    /**
-     * Single published home. The API answers 404 for a listing that does not
-     * exist *or* is not publicly eligible, deliberately collapsing both so a
-     * stranger cannot probe unpublished homes.
-     */
-    @GET("api/listings/{id}")
-    suspend fun getListingDetail(
-        @Path("id") id: Long
-    ): Response<PublicListingDetailResponse>
 }

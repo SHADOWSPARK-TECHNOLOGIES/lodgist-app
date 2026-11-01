@@ -15,7 +15,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
-import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.SupportAgent
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -64,7 +63,6 @@ fun LodgistTopBar(
     showWhatsAppButton: Boolean = true,
     savedCount: Int = 0,
     onSavedClick: () -> Unit = {},
-    onLiveClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -113,19 +111,6 @@ fun LodgistTopBar(
             }
         },
         actions = {
-            if (!canNavigateBack && onLiveClick != null) {
-                IconButton(
-                    onClick = onLiveClick,
-                    modifier = Modifier.testTag("top_bar_live_button")
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Cloud,
-                        contentDescription = "Live listings from the API",
-                        tint = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-            }
-
             if (!canNavigateBack) {
                 IconButton(
                     onClick = onSavedClick,

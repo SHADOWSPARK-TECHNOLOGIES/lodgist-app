@@ -38,15 +38,7 @@ data class PublicListingDto(
     val verificationLabel: String? = null,
     val evidenceVerified: Boolean? = null,
     val actions: PublicListingActionsDto? = null,
-    val images: List<PublicListingImageDto> = emptyList(),
-    // Detail-only fields. Absent from the browse payload; the screen must not
-    // assume they exist just because the type allows them.
-    val approxLocation: PublicApproxLocationDto? = null,
-    val reviewLabel: String? = null,
-    val sourceLabel: String? = null,
-    val reviewCount: Int? = null,
-    val averageRating: Double? = null,
-    val owner: PublicOwnerDto? = null
+    val images: List<PublicListingImageDto> = emptyList()
 ) {
     fun toEntity(): PropertyEntity? {
         val listingId = id?.toString() ?: return null
@@ -111,31 +103,4 @@ data class PublicListingImageDto(
     val altText: String? = null,
     val isPrimary: Boolean? = null,
     val order: Int? = null
-)
-
-/** Single-listing envelope. `data` is null when the API refuses or misses. */
-@JsonClass(generateAdapter = true)
-data class PublicListingDetailResponse(
-    val success: Boolean = false,
-    val data: PublicListingDto? = null,
-    val error: String? = null
-)
-
-/**
- * Where the home is, deliberately imprecise: the API snaps coordinates to a
- * grid and states the radius. Never render this as an address.
- */
-@JsonClass(generateAdapter = true)
-data class PublicApproxLocationDto(
-    val lat: Double? = null,
-    val lng: Double? = null,
-    val radius_m: Int? = null
-)
-
-@JsonClass(generateAdapter = true)
-data class PublicOwnerDto(
-    val id: Long? = null,
-    val name: String? = null,
-    val truthIndex: Int? = null,
-    val isVerified: Boolean? = null
 )

@@ -44,7 +44,7 @@ class LodgistApiServiceContractTest {
 
     @Test
     fun `client declares exactly the routes the api serves`() {
-        assertEquals(setOf("api/listings", "api/listings/{id}"), declaredRoutes())
+        assertEquals(setOf("api/listings"), declaredRoutes())
     }
 
     @Test
