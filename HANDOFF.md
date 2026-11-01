@@ -80,8 +80,7 @@ Still device-unverified: the listing detail screen (production publishes nothing
 ## Runtime verification, 1 November 2026 — a phone is attached, and the fold landed
 
 `adb devices` now lists a physical device, `0826317000000025`, API 36. The
-earlier note that no device is attached is out of date. Nothing has been
-installed on it yet; it has no copy of the app.
+earlier note that no device is attached is out of date.
 
 Emulator re-check, same boot command as above:
 
@@ -104,6 +103,63 @@ though the route exists.
 Test count dropped from 64 to 23 across the audit cuts, because four test
 classes were deleted along with the code they described. Nothing was removed
 to make a failing run pass.
+
+## Installed on the phone, 1 November 2026
+
+Install for audit and inspection:
+
+    adb -s 0826317000000025 install -r app/build/outputs/apk/debug/app-debug.apk
+
+    device      Infinix X6877, Android 16 (API 36), arm64-v8a
+    package     com.aistudio.lodgist.xrkwqv, versionCode 1, versionName 1.0
+    APK         22,099,525 bytes, installed 2026-11-01 18:50
+    sha256      cd6c82da88c0227b065a6334e0c4fb624b7cf09103ca3a4d11aa50bedf313634
+
+Confirmed on that device: launches to Explore, no crash, a live `200` from
+`GET /api/listings` (110-byte body), and "No published homes yet. Sample homes
+are not shown."
+
+The local database on the phone, read back with the debug build's `run-as`:
+
+    user_version = 4
+    journal_mode = wal
+    tables       = properties, inspection_bookings, landlord_listings,
+                   escrow_payments, room_master_table
+    row counts   = every table zero
+
+So the `cached_properties` table is genuinely gone on a real install, and the
+deleted seed rows are absent.
+
+### Inspecting it yourself
+
+The debug APK is debuggable, so `run-as` works and nothing here needs root.
+
+    # app-only logs
+    adb -s 0826317000000025 logcat -d | grep -iE 'lodgist|okhttp'
+
+    # crash buffer
+    adb -s 0826317000000025 logcat -d -b crash
+
+    # what is on screen
+    adb -s 0826317000000025 exec-out screencap -p > shot.png
+
+    # memory
+    adb -s 0826317000000025 shell dumpsys meminfo com.aistudio.lodgist.xrkwqv
+
+    # database, all three files
+    adb -s 0826317000000025 exec-out run-as com.aistudio.lodgist.xrkwqv cat databases/lodgist_database > db
+    adb -s 0826317000000025 exec-out run-as com.aistudio.lodgist.xrkwqv cat databases/lodgist_database-wal > db-wal
+    adb -s 0826317000000025 exec-out run-as com.aistudio.lodgist.xrkwqv cat databases/lodgist_database-shm > db-shm
+
+**Pull the `-wal` file too.** The database uses write-ahead logging, so the
+main file alone reports `user_version = 0` and no tables while the real schema
+and rows sit in the WAL. Reading only the main file gives a false empty
+picture. Keep the three files named exactly `db`, `db-wal`, `db-shm` so SQLite
+opens them together.
+
+Known cosmetic defect seen on the phone: the bottom bar's "Inspections" label
+wraps to "Inspection / s" on this 1208 px width. Not fixed.
+
 
 ## Device test, when a phone is plugged in
 
