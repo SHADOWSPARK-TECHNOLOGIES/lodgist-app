@@ -507,7 +507,7 @@ fun ListPropertyScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Submit for TruthScore Audit",
+                            text = "Save on this phone",
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -520,7 +520,7 @@ fun ListPropertyScreen(
         if (submissions.isNotEmpty()) {
             item {
                 Text(
-                    text = "My Submitted Properties (${submissions.size})",
+                    text = "Saved on this phone (${submissions.size})",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -563,7 +563,7 @@ fun ListPropertyScreen(
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    text = "Audit In Progress",
+                                    text = "Not submitted",
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = LodgistOrange

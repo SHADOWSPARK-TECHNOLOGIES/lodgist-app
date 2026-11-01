@@ -250,7 +250,7 @@ fun EscrowRevenueScreen(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "When you book an inspection or pay rent via Lodgist, transaction receipts and escrow holding proofs appear here.",
+                            text = "Payments are not available in the app yet. Nothing here means money was collected, held, or released.",
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             lineHeight = 15.sp
@@ -293,7 +293,7 @@ fun EscrowRevenueScreen(
                                     .padding(horizontal = 7.dp, vertical = 2.dp)
                             ) {
                                 Text(
-                                    text = item.status.replace("_", " "),
+                                    text = "Not a payment",
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = if (item.status == "HELD_IN_ESCROW") LodgistTeal else TruthScoreGreen
@@ -333,7 +333,8 @@ fun EscrowRevenueScreen(
                         if (item.status == "HELD_IN_ESCROW" && item.purpose == "ANNUAL_RENT_ESCROW") {
                             Spacer(modifier = Modifier.height(10.dp))
                             Button(
-                                onClick = { onReleaseEscrow(item.id) },
+                                onClick = {},
+                                enabled = false,
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(40.dp),
@@ -346,7 +347,7 @@ fun EscrowRevenueScreen(
                                     modifier = Modifier.size(14.dp)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("Keys Received — Release to Landlord", fontSize = 11.sp)
+                                Text("Release is not available", fontSize = 11.sp)
                             }
                         }
                     }

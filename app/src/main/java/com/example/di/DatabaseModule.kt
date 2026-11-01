@@ -6,9 +6,8 @@ import com.example.data.local.EscrowDao
 import com.example.data.local.InspectionDao
 import com.example.data.local.LandlordListingDao
 import com.example.data.local.PropertyDao
-import com.example.data.local.PropertyListingDao
 import com.example.data.repository.LodgistRepository
-import com.example.data.repository.PropertyRepository
+import com.example.data.repository.PublicListingsRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 
@@ -31,17 +30,10 @@ object DatabaseModule {
      */
     fun provideAppDatabase(context: Context): AppDatabase {
         return databaseInstance ?: synchronized(this) {
-            databaseInstance ?: AppDatabase.getInstance(context).also {
+            databaseInstance ?: AppDatabase.getDatabase(context).also {
                 databaseInstance = it
             }
         }
-    }
-
-    /**
-     * Provides the [PropertyListingDao] from the given [AppDatabase].
-     */
-    fun providePropertyListingDao(database: AppDatabase): PropertyListingDao {
-        return database.propertyListingDao()
     }
 
     /**
@@ -73,24 +65,6 @@ object DatabaseModule {
     }
 
     /**
-     * Factory method providing [PropertyRepository] with its DAO and IO dispatcher.
-     *
-     * @param database The [AppDatabase] providing the [PropertyListingDao].
-     * @param ioDispatcher The [CoroutineDispatcher] for disk I/O (defaults to [Dispatchers.IO]).
-     */
-    fun providePropertyRepository(
-        database: AppDatabase,
-        apiService: com.example.data.remote.api.LodgistApiService? = NetworkModule.provideLodgistApiService(),
-        ioDispatcher: CoroutineDispatcher = Dispatchers.IO
-    ): PropertyRepository {
-        return PropertyRepository(
-            propertyDao = providePropertyListingDao(database),
-            apiService = apiService,
-            ioDispatcher = ioDispatcher
-        )
-    }
-
-    /**
      * Factory method providing [LodgistRepository] with all required DAOs.
      *
      * @param database The [AppDatabase] providing the DAOs.
@@ -100,7 +74,8 @@ object DatabaseModule {
             propertyDao = providePropertyDao(database),
             inspectionDao = provideInspectionDao(database),
             landlordListingDao = provideLandlordListingDao(database),
-            escrowDao = provideEscrowDao(database)
+            escrowDao = provideEscrowDao(database),
+            listingsReader = PublicListingsRepository(NetworkModule.provideLodgistApiService())
         )
     }
 

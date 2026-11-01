@@ -28,6 +28,12 @@ interface PropertyDao {
     @Query("SELECT * FROM properties WHERE isStudentFriendly = 1 ORDER BY truthScore DESC")
     fun getStudentProperties(): Flow<List<PropertyEntity>>
 
+    @Query("DELETE FROM properties")
+    suspend fun deleteAll()
+
+    @Query("DELETE FROM properties WHERE id LIKE 'lodg_%'")
+    suspend fun deleteDemonstrationRows()
+
     @Query("SELECT COUNT(*) FROM properties")
     suspend fun getPropertyCount(): Int
 

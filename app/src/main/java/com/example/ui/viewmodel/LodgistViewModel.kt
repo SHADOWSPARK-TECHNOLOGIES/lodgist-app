@@ -3,12 +3,12 @@ package com.example.ui.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.data.local.LodgistDatabase
+import com.example.data.local.AppDatabase
 import com.example.data.model.EscrowPaymentEntity
 import com.example.data.model.InspectionBookingEntity
 import com.example.data.model.LandlordListingEntity
 import com.example.data.model.PropertyEntity
-import com.example.data.repository.LodgistRepository
+import com.example.data.repository.PublicListingsResult
 import com.example.di.DatabaseModule
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -19,9 +19,15 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+enum class InventoryLoad {
+    LOADING,
+    EMPTY,
+    FAILED,
+    READY
+}
+
 enum class ScreenDestination {
     EXPLORE,
-    SEARCH_PROPERTIES,
     INSPECTIONS,
     SAVED,
     ESCROW_VAULT,
@@ -34,22 +40,13 @@ data class FilterState(
     val searchQuery: String = "",
     val selectedCity: String = "All", // "All", "Owerri", "Nekede", "Lagos", "Port Harcourt", "Abuja"
     val selectedType: String = "All", // "All", "Self-Contain", "1 Bedroom Flat", "2 Bedroom Flat", "3 Bedroom Duplex", "Studio Apartment"
-    val minRentNaira: Long = 0L,
     val maxRentNaira: Long = 10000000L,
-    val selectedRooms: Int = 0, // 0 = Any, 1, 2, 3, 4+
-    val selectedCategory: String = "All", // "All", "Houses", "Flats", "Self-Contain"
     val onlyHighTruthScore: Boolean = false // TruthScore >= 90
 )
 
-class LodgistViewModel(
-    application: android.app.Application,
-    customRepository: com.example.data.repository.LodgistRepository?
-) : androidx.lifecycle.AndroidViewModel(application) {
-
-    constructor(application: android.app.Application) : this(application, null)
-
-    private val database = com.example.di.DatabaseModule.provideAppDatabase(application)
-    private val repository = customRepository ?: com.example.di.DatabaseModule.provideLodgistRepository(database)
+class LodgistViewModel(application: Application) : AndroidViewModel(application) {
+    private val database = DatabaseModule.provideAppDatabase(application)
+    private val repository = DatabaseModule.provideLodgistRepository(database)
 
     private val _currentScreen = MutableStateFlow(ScreenDestination.EXPLORE)
     val currentScreen: StateFlow<ScreenDestination> = _currentScreen.asStateFlow()
@@ -60,13 +57,18 @@ class LodgistViewModel(
     private val _filterState = MutableStateFlow(FilterState())
     val filterState: StateFlow<FilterState> = _filterState.asStateFlow()
 
+    private val _inventoryLoad = MutableStateFlow(InventoryLoad.LOADING)
+    val inventoryLoad: StateFlow<InventoryLoad> = _inventoryLoad.asStateFlow()
+
     private val _userMessage = MutableStateFlow<String?>(null)
     val userMessage: StateFlow<String?> = _userMessage.asStateFlow()
 
     val allProperties: StateFlow<List<PropertyEntity>> = repository.allProperties
+        .map { rows -> rows.filter { !isSeededRow(it.id) } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val favoriteProperties: StateFlow<List<PropertyEntity>> = repository.favoriteProperties
+        .map { rows -> rows.filter { !isSeededRow(it.id) } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val inspectionBookings: StateFlow<List<InspectionBookingEntity>> = repository.inspectionBookings
@@ -109,28 +111,10 @@ class LodgistViewModel(
                 else -> prop.propertyType.equals(filter.selectedType, ignoreCase = true)
             }
 
-            val matchesRooms = when (filter.selectedRooms) {
-                0 -> true
-                4 -> prop.bedrooms >= 4
-                else -> prop.bedrooms == filter.selectedRooms
-            }
-
-            val matchesCategory = when (filter.selectedCategory) {
-                "All" -> true
-                "Flats" -> prop.propertyType.contains("Flat", ignoreCase = true) ||
-                           prop.propertyType.contains("Apartment", ignoreCase = true)
-                "Houses" -> prop.propertyType.contains("House", ignoreCase = true) ||
-                            prop.propertyType.contains("Duplex", ignoreCase = true) ||
-                            prop.propertyType.contains("Bungalow", ignoreCase = true)
-                "Self-Contain" -> prop.propertyType.contains("Self-Contain", ignoreCase = true) ||
-                                  prop.propertyType.contains("Studio", ignoreCase = true)
-                else -> true
-            }
-
-            val matchesRent = prop.annualRent in filter.minRentNaira..filter.maxRentNaira
+            val matchesRent = prop.annualRent <= filter.maxRentNaira
             val matchesTruthScore = !filter.onlyHighTruthScore || prop.truthScore >= 90
 
-            matchesQuery && matchesCity && matchesType && matchesRooms && matchesCategory && matchesRent && matchesTruthScore
+            matchesQuery && matchesCity && matchesType && matchesRent && matchesTruthScore
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -142,49 +126,48 @@ class LodgistViewModel(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     init {
+        refreshPublishedHomes()
+    }
+
+    fun refreshPublishedHomes() {
         viewModelScope.launch {
-            repository.checkAndSeedInitialData()
+            when (val read = repository.refreshPublishedHomes()) {
+                is PublicListingsResult.Loaded -> {
+                    _inventoryLoad.value = InventoryLoad.READY
+                    _userMessage.value = null
+                }
+                PublicListingsResult.Empty -> {
+                    _inventoryLoad.value = InventoryLoad.EMPTY
+                    _userMessage.value = "No published homes yet."
+                }
+                PublicListingsResult.Offline -> {
+                    _inventoryLoad.value = InventoryLoad.FAILED
+                    _userMessage.value = "Could not load homes. Check your connection. Nothing on screen is a live listing."
+                }
+                PublicListingsResult.Unauthorized -> {
+                    _inventoryLoad.value = InventoryLoad.FAILED
+                    _userMessage.value = "The API refused this request. Sign in again."
+                }
+                is PublicListingsResult.Failed -> {
+                    _inventoryLoad.value = InventoryLoad.FAILED
+                    _userMessage.value = "Could not load homes. Nothing on screen is a live listing."
+                }
+            }
         }
     }
 
-    private val backStack = mutableListOf<ScreenDestination>()
-
     fun navigateTo(destination: ScreenDestination) {
-        if (_currentScreen.value != destination) {
-            backStack.add(_currentScreen.value)
-            _currentScreen.value = destination
-        }
+        _currentScreen.value = destination
     }
 
     fun selectProperty(propertyId: String) {
-        backStack.add(_currentScreen.value)
         _selectedPropertyId.value = propertyId
         _currentScreen.value = ScreenDestination.PROPERTY_DETAIL
     }
 
     fun clearSelectedProperty() {
         _selectedPropertyId.value = null
-        if (backStack.isNotEmpty()) {
-            _currentScreen.value = backStack.removeAt(backStack.size - 1)
-        } else {
-            _currentScreen.value = ScreenDestination.EXPLORE
-        }
-    }
-
-    fun popBack(): Boolean {
-        if (_currentScreen.value == ScreenDestination.PROPERTY_DETAIL) {
-            clearSelectedProperty()
-            return true
-        }
-        if (backStack.isNotEmpty()) {
-            _currentScreen.value = backStack.removeAt(backStack.size - 1)
-            return true
-        }
-        if (_currentScreen.value != ScreenDestination.EXPLORE) {
-            _currentScreen.value = ScreenDestination.EXPLORE
-            return true
-        }
-        return false
+        _currentScreen.value = ScreenDestination.EXPLORE
     }
 
     fun updateSearchQuery(query: String) {
@@ -201,18 +184,6 @@ class LodgistViewModel(
 
     fun updateMaxRentFilter(maxRent: Long) {
         _filterState.value = _filterState.value.copy(maxRentNaira = maxRent)
-    }
-
-    fun updatePriceRange(minRent: Long, maxRent: Long) {
-        _filterState.value = _filterState.value.copy(minRentNaira = minRent, maxRentNaira = maxRent)
-    }
-
-    fun updateRoomsFilter(rooms: Int) {
-        _filterState.value = _filterState.value.copy(selectedRooms = rooms)
-    }
-
-    fun updateCategoryFilter(category: String) {
-        _filterState.value = _filterState.value.copy(selectedCategory = category)
     }
 
     fun toggleHighTruthScoreFilter() {
@@ -248,31 +219,11 @@ class LodgistViewModel(
                 preferredDate = preferredDate,
                 preferredTimeSlot = preferredTimeSlot,
                 notes = notes,
-                assignedAgent = "Lodgist Field Inspector (Chidi O.)",
-                status = "CONFIRMED"
+                assignedAgent = "",
+                status = "SAVED_ON_PHONE"
             )
-            val bookingResult = repository.bookInspection(booking)
-            if (bookingResult.isFailure) {
-                _userMessage.value = bookingResult.exceptionOrNull()?.message ?: "Viewing request rejected: property is unverified."
-                return@launch
-            }
-            val bookingId = bookingResult.getOrNull() ?: 1L
-
-            // Automate platform revenue: Record the ₦3,500 inspection escort escrow token
-            val payment = EscrowPaymentEntity(
-                propertyId = property.id,
-                propertyTitle = property.title,
-                payerName = clientName,
-                payerPhone = clientPhone,
-                amount = 3500L,
-                purpose = "INSPECTION_TOKEN",
-                paymentMethod = "DEBIT_CARD",
-                transactionRef = "LDG-INS-${bookingId.toString().padStart(4, '0')}",
-                status = "HELD_IN_ESCROW"
-            )
-            repository.processEscrowPayment(payment)
-
-            _userMessage.value = "Inspection booked! ₦3,500 token secured in Escrow. Officer assigned for $preferredDate."
+            repository.bookInspection(booking)
+            _userMessage.value = "Saved on this phone only. Lodgist has not received this request, and no inspector was assigned."
             _currentScreen.value = ScreenDestination.INSPECTIONS
         }
     }
@@ -280,7 +231,7 @@ class LodgistViewModel(
     fun cancelInspection(bookingId: Long) {
         viewModelScope.launch {
             repository.cancelInspection(bookingId)
-            _userMessage.value = "Inspection visit cancelled & escrow token refunded."
+            _userMessage.value = "Removed the saved request on this phone. Nothing was submitted, paid, or refunded."
         }
     }
 
@@ -316,26 +267,10 @@ class LodgistViewModel(
                 hasNINVerified = hasNINVerified,
                 hasBoreholeWater = hasBoreholeWater,
                 hasPrepaidMeter = hasPrepaidMeter,
-                status = "ADVERTISER_LEAD_PENDING_REVIEW"
+                status = "SAVED_ON_PHONE"
             )
-            val submissionId = repository.submitLandlordProperty(submission)
-
-            // An advertise submission is a lead, not a published home. Payment never buys verification.
-            val auditPayment = EscrowPaymentEntity(
-                propertyId = "landlord_lead_$submissionId",
-                propertyTitle = title,
-                payerName = ownerFullName,
-                payerPhone = ownerPhone,
-                amount = 15000L,
-                purpose = "ADVERTISER_LEAD_AUDIT",
-                paymentMethod = "DIRECT_BANK_TRANSFER",
-                transactionRef = "LDG-LEAD-${submissionId.toString().padStart(4, '0')}",
-                status = "PENDING_DISPLAY_REVIEW"
-            )
-            repository.processEscrowPayment(auditPayment)
-
-            _userMessage.value = "Advertiser lead submitted! Our Owerri field team will verify details before display approval."
-            _currentScreen.value = ScreenDestination.ESCROW_VAULT
+            repository.submitLandlordProperty(submission)
+            _userMessage.value = "Saved on this phone. It was not submitted, and no fee was collected."
         }
     }
 
@@ -346,34 +281,19 @@ class LodgistViewModel(
         method: String,
         ref: String
     ) {
-        viewModelScope.launch {
-            val payment = EscrowPaymentEntity(
-                propertyId = property.id,
-                propertyTitle = property.title,
-                payerName = tenantName,
-                payerPhone = tenantPhone,
-                amount = property.totalMoveInCost,
-                purpose = "ANNUAL_RENT_ESCROW",
-                paymentMethod = method,
-                transactionRef = ref,
-                status = "HELD_IN_ESCROW"
-            )
-            repository.processEscrowPayment(payment)
-            _userMessage.value = "${formatNaira(property.totalMoveInCost)} rent secured in Lodgist Escrow! Safe until move-in."
-            _currentScreen.value = ScreenDestination.ESCROW_VAULT
-        }
+        _userMessage.value = "Payments are not available in the app yet. Nothing was collected."
     }
 
     fun releaseEscrowToLandlord(paymentId: Long) {
-        viewModelScope.launch {
-            repository.releaseEscrow(paymentId)
-            _userMessage.value = "Escrow funds released to landlord. Move-in confirmed!"
-        }
+        _userMessage.value = "Nothing is held in escrow, so nothing can be released."
     }
 
     fun clearUserMessage() {
         _userMessage.value = null
     }
+
+    /** Rows the app used to seed offline can still sit in older local databases. */
+    private fun isSeededRow(id: String): Boolean = id.startsWith("lodg_")
 
     private fun formatNaira(amount: Long): String {
         return com.example.ui.components.formatNaira(amount)

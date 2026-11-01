@@ -14,7 +14,7 @@ data class InspectionBookingEntity(
     val preferredDate: String,      // e.g. "Tomorrow, Oct 5"
     val preferredTimeSlot: String,  // e.g. "Morning (10:00 AM - 12:00 PM)"
     val notes: String = "",
-    val assignedAgent: String = "Lodgist Field Inspector (Chidi O.)",
-    val status: String = "CONFIRMED", // "CONFIRMED", "INSPECTION_PENDING", "COMPLETED", "CANCELLED"
+    val assignedAgent: String = "",
+    val status: String = "SAVED_ON_PHONE",
     val bookingTimestamp: Long = System.currentTimeMillis()
 )

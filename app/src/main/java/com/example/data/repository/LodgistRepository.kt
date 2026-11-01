@@ -3,7 +3,7 @@ package com.example.data.repository
 import com.example.data.local.EscrowDao
 import com.example.data.local.InspectionDao
 import com.example.data.local.LandlordListingDao
-import com.example.data.local.LodgistDatabase
+import com.example.data.local.AppDatabase
 import com.example.data.local.PropertyDao
 import com.example.data.model.EscrowPaymentEntity
 import com.example.data.model.InspectionBookingEntity
@@ -17,7 +17,8 @@ class LodgistRepository(
     private val propertyDao: PropertyDao,
     private val inspectionDao: InspectionDao,
     private val landlordListingDao: LandlordListingDao,
-    private val escrowDao: EscrowDao
+    private val escrowDao: EscrowDao,
+    private val listingsReader: PublicListingsRepository = PublicListingsRepository()
 ) {
     val allProperties: Flow<List<PropertyEntity>> = propertyDao.getAllProperties()
     val favoriteProperties: Flow<List<PropertyEntity>> = propertyDao.getFavoriteProperties()
@@ -78,10 +79,20 @@ class LodgistRepository(
 
     suspend fun checkAndSeedInitialData() {
         withContext(Dispatchers.IO) {
-            val count = propertyDao.getPropertyCount()
-            if (count == 0) {
-                LodgistDatabase.populateInitialData(propertyDao)
-            }
+            // Kept so older callers compile. Demo rows are not inventory.
         }
+    }
+
+    suspend fun refreshPublishedHomes(): PublicListingsResult = withContext(Dispatchers.IO) {
+        val read = listingsReader.load()
+        when (read) {
+            is PublicListingsResult.Loaded -> {
+                propertyDao.deleteAll()
+                val homes = read.homes.mapNotNull { it.toEntity() }
+                if (homes.isNotEmpty()) propertyDao.insertProperties(homes)
+            }
+            else -> propertyDao.deleteDemonstrationRows()
+        }
+        read
     }
 }

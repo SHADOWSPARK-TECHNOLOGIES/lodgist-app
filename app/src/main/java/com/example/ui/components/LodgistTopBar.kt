@@ -15,7 +15,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SupportAgent
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -64,7 +63,6 @@ fun LodgistTopBar(
     showWhatsAppButton: Boolean = true,
     savedCount: Int = 0,
     onSavedClick: () -> Unit = {},
-    onSearchClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -114,17 +112,6 @@ fun LodgistTopBar(
         },
         actions = {
             if (!canNavigateBack) {
-                IconButton(
-                    onClick = onSearchClick,
-                    modifier = Modifier.testTag("top_bar_search_button")
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = "Search Properties",
-                        tint = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-
                 IconButton(
                     onClick = onSavedClick,
                     modifier = Modifier.testTag("top_bar_saved_button")

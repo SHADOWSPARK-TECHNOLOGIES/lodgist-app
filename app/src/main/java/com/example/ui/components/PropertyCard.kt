@@ -95,7 +95,11 @@ fun PropertyCard(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    TruthScorePill(score = property.truthScore)
+                    if (property.truthScore > 0) {
+                        TruthScorePill(score = property.truthScore)
+                    } else {
+                        Spacer(modifier = Modifier.width(1.dp))
+                    }
 
                     IconButton(
                         onClick = onToggleFavorite,

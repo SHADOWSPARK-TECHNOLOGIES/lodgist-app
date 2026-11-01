@@ -320,7 +320,7 @@ fun InspectionBookingSheet(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Confirm Inspection Booking",
+                    text = "Save on this phone",
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold
                 )
