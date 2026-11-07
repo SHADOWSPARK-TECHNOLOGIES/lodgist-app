@@ -1,0 +1,120 @@
+name: Lodgist Android CI
+
+on:
+  push:
+    branches:
+      - agent/lodgist-android-ci-20261107
+      - main
+  pull_request:
+    branches:
+      - main
+      - feat/live-listings-api-client
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lodgist-android-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android:
+    name: Unit tests, lint and debug APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+
+      - name: Install Android API 36.1 platform and build tools
+        run: sdkmanager 'platforms;android-36.1' 'build-tools;36.1.0'
+
+      - name: Validate Gradle wrapper and set up cache
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Create ephemeral debug keystore for CI only
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -e debug.keystore ]; then
+            keytool -genkeypair -noprompt -keystore debug.keystore \
+              -alias androiddebugkey -storepass android -keypass android \
+              -dname 'CN=Android Debug,O=Android,C=US' \
+              -keyalg RSA -keysize 2048 -validity 10000
+          fi
+          chmod +x ./gradlew
+          git rev-parse HEAD
+          java -version
+
+      - name: Unit tests, lint, debug build
+        run: ./gradlew --no-daemon --console=plain :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
+
+      - name: Fail on Android lint errors even if Gradle is configured leniently
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          path = Path('app/build/reports/lint-results-debug.xml')
+          if not path.is_file():
+              raise SystemExit('BLOCKED: lint-results-debug.xml missing; cannot verify lint result')
+          issues = ET.parse(path).getroot().findall('.//issue')
+          errors = [x for x in issues if x.get('severity', '').lower() in ('fatal', 'error')]
+          print(f'Android lint: {len(errors)} errors, {len(issues) - len(errors)} other findings')
+          for i in errors[:20]:
+              print(i.get('id'), i.get('message'))
+          if errors:
+              raise SystemExit(1)
+          PY
+
+      - name: Record tests and debug APK checksum
+        if: success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha256sum app/build/outputs/apk/debug/app-debug.apk
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          reports = list(Path('app/build/test-results/testDebugUnitTest').rglob('TEST-*.xml'))
+          if not reports:
+              raise SystemExit('No JUnit XML result reports found')
+          totals = {name: 0 for name in ('tests', 'failures', 'errors', 'skipped')}
+          for report in reports:
+              root = ET.parse(report).getroot()
+              for name in totals:
+                  totals[name] += int(root.get(name, 0))
+          print('JUnit:', totals)
+          if totals['tests'] == 0 or totals['failures'] or totals['errors']:
+              raise SystemExit('JUnit results do not meet pass gate')
+          PY
+
+      - name: Upload test and lint reports (no private files)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lodgist-android-reports
+          path: |
+            app/build/reports/
+            app/build/test-results/
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Upload debug APK for isolated testing
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lodgist-android-debug-unsigned-for-production
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7
